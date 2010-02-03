@@ -1,0 +1,112 @@
+#include <iostream>
+#include <string>
+#include <fstream>
+#include <cassert>
+#include "cmdline.h"
+#include "fujimap.hpp"
+
+using namespace std;
+
+int buildFromFile(const cmdline::parser& p){
+  const char* fn = p.get<string>("dic").c_str();
+    
+  fujimap_tool::Fujimap fm;
+  fm.initFP(p.get<int>("fpwidth"));
+  fm.initTmpN(p.get<int>("tmpN"));
+
+  ifstream ifs(fn);
+  if (!ifs){
+    cerr << "Unable to open " << fn << endl;
+    return -1;
+  }
+
+  map<string, uint32_t> keyValues; // for test
+  string line;
+  while (getline(ifs, line)){
+    size_t p = line.find('\t');
+    if (p == string::npos){
+      cerr << "Warning: not tab found : " << line << endl;
+      continue;
+    }
+    if (p == 0) continue;
+    if (p+1 == line.size()) continue;
+    uint32_t val = atoi(line.substr(p+1).c_str());
+    string   key = line.substr(0, p);
+    fm.add(key, val); // key is searchable
+    keyValues[key] = val;
+  }
+
+  cerr << "keyNum:" << fm.getKeyNum() << endl;
+
+  int ret = fm.build(); 
+  if (ret == -1){
+    return -1;
+  }
+
+  if (fm.save(p.get<string>("index").c_str()) == -1){
+    cerr << fm.what() << endl;
+    return -1;
+  }
+
+  cerr << fm.getKeyNum() << endl;
+
+  // test
+  fujimap_tool::Fujimap fm2;
+  if (fm2.load(p.get<string>("index").c_str()) == -1){
+    cerr << fm2.what() << endl;
+    return -1;
+  }
+
+  cerr << "load done." << endl;
+  cerr << fm2.getKeyNum() << endl;
+
+  for (map<string, uint32_t >::const_iterator it = keyValues.begin();
+       it != keyValues.end(); ++it){
+    uint32_t ret = fm2.getVal(it->first);
+    if (it->second != ret){
+      cerr << "Error: " << it->first << endl
+	   << "correct:" << it->second << " " << " incorrect:" << ret << endl;
+      
+    }
+  }
+  
+  int errorN = 0;
+  for (int i = 0; i < 10000; ++i){
+    ostringstream os;
+    os << i << " " << i+1 << " " << i+2;
+    string ret = fm2.get(os.str());
+    if (ret != ""){
+      errorN++;
+    }
+  }
+  cerr << errorN << "/" << 10000 << endl;
+
+  return 0;
+}
+
+
+int main(int argc, char* argv[]){
+  cmdline::parser p;
+  p.add<string>("dic", 'd', "dictionary", false, "");
+  p.add<int>("fpwidth", 'f', "false positive rate 2^{-f} (0 <= f < 31) ", false, 0);
+  p.add<int>("tmpN", 't', "temporarySize", false, 1000000);
+  p.add("help", 'h', "print this message");
+  p.set_progam_name("fujimap_test");
+  
+  bool parseOK = p.parse(argc, argv);
+  if (argc == 1 || p.exist("help")){
+    cerr << p.usage();
+    return -1;
+  }
+
+  if (!parseOK){
+    cerr << p.error() << endl
+	 << p.usage();
+    return -1;
+  }
+
+  if (buildFromFile(p) == -1){
+    return -1;
+  }
+  return 0;
+}
