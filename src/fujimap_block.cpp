@@ -171,7 +171,7 @@ int FujimapBlock::build_(vector<KeyEdge>& keyEdges){
 
     const KeyEdge& ke(keyEdges[keyID]);
     int choosed = -1;
-    for (int i = 0; i < R; ++i){
+    for (uint32_t i = 0; i < R; ++i){
       const uint32_t t = (ke.get(i,bn) + codePos) % totalBN;
       --deg[t];
       if (deg[t] == 0){
@@ -195,9 +195,9 @@ int FujimapBlock::build_(vector<KeyEdge>& keyEdges){
   }
   assert(q.empty());
 
-
-  for (vector<pair<uint32_t, uint8_t> >::const_reverse_iterator it = 
-	 extractedEdges.rbegin(); it != extractedEdges.rend(); ++it){
+  reverse(extractedEdges.begin(), extractedEdges.end());
+  for (vector<pair<uint32_t, uint8_t> >::const_iterator it = 
+	 extractedEdges.begin(); it != extractedEdges.end(); ++it){
     const uint32_t v       = it->first;
     const uint32_t keyID   = v / codeLen;
     const uint32_t codePos = v % codeLen;
