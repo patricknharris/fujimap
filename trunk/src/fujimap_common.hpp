@@ -24,8 +24,8 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef COMMON_HPP__
-#define COMMON_HPP__
+#ifndef FUJIMAP_COMMON_HPP__
+#define FUJIMAP_COMMON_HPP__
 
 #include <stdint.h>
 

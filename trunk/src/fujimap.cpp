@@ -53,26 +53,26 @@ void Fujimap::initTmpN(const uint32_t tmpN_){
   tmpN = tmpN_;
 }
 
-void Fujimap::add(const std::string& key, const std::string& value){
+void Fujimap::setString(const std::string& key, const std::string& value){
   tmpEdges[key] = getCode(value);
   if (tmpEdges.size() == tmpN){
     build();
   }
 }
 
-void Fujimap::addIndex(const std::string& key, const std::string& value){
+void Fujimap::setStringTemporary(const std::string& key, const std::string& value){
   KeyEdge k(key, getCode(value), seed);
   keyEdges[k.getBlock()].push_back(k);
 }
 
-void Fujimap::add(const std::string& key, const uint32_t value){
+void Fujimap::setInteger(const std::string& key, const uint32_t value){
   tmpEdges[key] = value;
   if (tmpEdges.size() == tmpN){
     build();
   } 
 }
 
-void Fujimap::addIndex(const std::string& key, const uint32_t value){
+void Fujimap::setIntegerTemporary(const std::string& key, const uint32_t value){
   KeyEdge k(key, value, seed);
   keyEdges[k.getBlock()].push_back(k);
 }
@@ -91,7 +91,7 @@ uint32_t Fujimap::getCode(const std::string& value){
 
 bool keyEq(const KeyEdge& v1,
 	   const KeyEdge& v2){
-  for (int i = 0; i < R; ++i){
+  for (uint32_t i = 0; i < R; ++i){
     if (v1.v[i]  != v2.v[i]) return false;
   }
   return true; // ignore code
@@ -99,7 +99,7 @@ bool keyEq(const KeyEdge& v1,
 
 bool keyLt(const KeyEdge& v1,
 	   const KeyEdge& v2){
-  for (int i = 0; i < R-1; ++i){
+  for (uint32_t i = 0; i < R-1; ++i){
     if (v1.v[i] != v2.v[i]) return v1.v[i] < v2.v[i];
   }
   return v1.v[R-1] < v2.v[R-1]; // ignore code
@@ -158,8 +158,8 @@ size_t Fujimap::getKeyNum() const{
 
 }
 
-std::string Fujimap::get(const std::string& key) const {
-  uint32_t ret = getVal(key);
+std::string Fujimap::getString(const std::string& key) const {
+  uint32_t ret = getInteger(key);
   if (ret != NOTFOUND && ret < code2val.size()){
     return code2val[ret];
   } else {
@@ -167,7 +167,7 @@ std::string Fujimap::get(const std::string& key) const {
   }
 }
 
-uint32_t Fujimap::getVal(const std::string& key) const {
+uint32_t Fujimap::getInteger(const std::string& key) const {
   map<string, uint32_t>::const_iterator it = tmpEdges.find(key);
   if (it != tmpEdges.end()){
     return it->second;
