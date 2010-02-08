@@ -1,7 +1,7 @@
 #ifndef KEYEDGE_HPP__
 #define KEYEDGE_HPP__
 
-#include "common.hpp"
+#include "fujimap_common.hpp"
 
 #include <stdint.h>
 #include <string>

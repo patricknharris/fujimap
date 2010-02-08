@@ -32,7 +32,7 @@
 #include <fstream>
 #include "key_edge.hpp"
 #include "bitvec.hpp"
-#include "common.hpp"
+#include "fujimap_common.hpp"
 
 namespace fujimap_tool{
 

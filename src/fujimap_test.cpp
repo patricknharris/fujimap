@@ -32,7 +32,7 @@ int buildFromFile(const cmdline::parser& p){
     if (p+1 == line.size()) continue;
     uint32_t val = atoi(line.substr(p+1).c_str());
     string   key = line.substr(0, p);
-    fm.add(key, val); // key is searchable
+    fm.setInteger(key, val); // key is searchable immediately
     keyValues[key] = val;
   }
 
@@ -62,7 +62,7 @@ int buildFromFile(const cmdline::parser& p){
 
   for (map<string, uint32_t >::const_iterator it = keyValues.begin();
        it != keyValues.end(); ++it){
-    uint32_t ret = fm2.getVal(it->first);
+    uint32_t ret = fm2.getInteger(it->first);
     if (it->second != ret){
       cerr << "Error: " << it->first << endl
 	   << "correct:" << it->second << " " << " incorrect:" << ret << endl;
@@ -74,8 +74,8 @@ int buildFromFile(const cmdline::parser& p){
   for (int i = 0; i < 10000; ++i){
     ostringstream os;
     os << i << " " << i+1 << " " << i+2;
-    string ret = fm2.get(os.str());
-    if (ret != ""){
+    uint32_t ret = fm2.getInteger(os.str());
+    if (ret != fujimap_tool::NOTFOUND){
       errorN++;
     }
   }

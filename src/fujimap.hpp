@@ -41,8 +41,9 @@ namespace fujimap_tool{
 
 /**
   * Succinct Associative Array
-  * Support basic add/get and other functions
+  * Support basic key/value store operations (set/get)
   */
+
 class Fujimap{
 public:
   Fujimap(); ///< Default Constructor
@@ -52,16 +53,16 @@ public:
   void initFP(const uint32_t fpWidth_); ///< Set a false postive rate (prob. of false positive is  2^{-fpWidth_})
   void initTmpN(const uint32_t tmpN); ///< Set a size of tempolary map
 
-  void add(const std::string& key,      const std::string& value); ///< Add a (key, value). and seachable immediately
-  void addIndex(const std::string& key, const std::string& value); ///< Add a (key, value) and not seachable immediately (More efficient)
+  void setString(const std::string& key, const std::string& value); ///< Store a (key, value). and seachable immediately
+  void setStringTemporary(const std::string& key, const std::string& value); ///< Store a (key, value) and NOT seachable immediately
+  
+  void setInteger(const std::string& key,      const uint32_t value); ///< Store a (key, value). and seachable immediately
+  void setIntegerTemporary(const std::string& key, const uint32_t value); ///< Store a (key, value) and NOT seachable immediately
 
-  void add(const std::string& key,      const uint32_t value); ///< Add a (key, value). and seachable immediately
-  void addIndex(const std::string& key, const uint32_t value); ///< Add a (key, value) and not seachable immediately (More efficient)
+  int build(); ///< Build a succinct associative array for a temporary associative array
 
-  int build(); ///< Build a succinct associative array for temporary associative array
-
-  std::string get(const std::string& key) const; ///< Return a value if exist, and return NOTFOUND if not.
-  uint32_t getVal(const std::string& key) const; ///< Return a value if exist, and return NOTFOUND if not.
+  std::string getString(const std::string& key) const; ///< Return a value if exist, and return NOTFOUND if not.
+  uint32_t getInteger(const std::string& key) const; ///< Return a value if exist, and return NOTFOUND if not.
 
   int load(const char* index); ///< Save a map in index
   int save(const char* index); ///< Load a map from index

@@ -33,7 +33,7 @@ int buildFromFile(const cmdline::parser& p){
     uint32_t val = atoi(line.substr(p+1).c_str());
     string   key = line.substr(0, p);
     //cerr << "add " << key << " " << val << endl;
-    fm.addIndex(key, val);
+    fm.setIntegerTemporary(key, val);
   }
 
   cerr << "keyNum:" << fm.getKeyNum() << endl;
@@ -91,9 +91,9 @@ int main(int argc, char* argv[]){
     string key;
     while (getline(cin, key)){
       cout << ">";
-      string val = fm.get(key);
+      string val = fm.getString(key);
       cout << "val:" << val << endl;
-      uint32_t code = fm.getVal(key);
+      uint32_t code = fm.getInteger(key);
       cout << "code:" << code << endl;
     }
   }
