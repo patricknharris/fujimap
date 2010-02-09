@@ -49,20 +49,20 @@ public:
   Fujimap(); ///< Default Constructor
   ~Fujimap(); ///< Default Destructor
 
-  void initSeed(const uint32_t seed_); ///< Set a seed for hash function
-  void initFP(const uint32_t fpWidth_); ///< Set a false postive rate (prob. of false positive is  2^{-fpWidth_})
-  void initTmpN(const uint32_t tmpN); ///< Set a size of tempolary map
+  void initSeed(const uint64_t seed_); ///< Set a seed for hash function
+  void initFP(const uint64_t fpWidth_); ///< Set a false postive rate (prob. of false positive is  2^{-fpWidth_})
+  void initTmpN(const uint64_t tmpN); ///< Set a size of tempolary map
 
   void setString(const std::string& key, const std::string& value); ///< Store a (key, value). and seachable immediately
   void setStringTemporary(const std::string& key, const std::string& value); ///< Store a (key, value) and NOT seachable immediately
   
-  void setInteger(const std::string& key,      const uint32_t value); ///< Store a (key, value). and seachable immediately
-  void setIntegerTemporary(const std::string& key, const uint32_t value); ///< Store a (key, value) and NOT seachable immediately
+  void setInteger(const std::string& key,          const uint64_t value); ///< Store a (key, value). and seachable immediately
+  void setIntegerTemporary(const std::string& key, const uint64_t value); ///< Store a (key, value) and NOT seachable immediately
 
   int build(); ///< Build a succinct associative array for a temporary associative array
 
   std::string getString(const std::string& key) const; ///< Return a value if exist, and return NOTFOUND if not.
-  uint32_t getInteger(const std::string& key) const; ///< Return a value if exist, and return NOTFOUND if not.
+  uint64_t getInteger(const std::string& key) const; ///< Return a value if exist, and return NOTFOUND if not.
 
   int load(const char* index); ///< Save a map in index
   int save(const char* index); ///< Load a map from index
@@ -70,23 +70,23 @@ public:
   std::string what() const; ///< Report the current status (after error occured)
   size_t getKeyNum() const; ///< Return the number of registered keys.
 private:
-  uint32_t getCode(const std::string& value); ///< Return corresponding code of a given value
+  uint64_t getCode(const std::string& value); ///< Return corresponding code of a given value
   void saveString(const std::string& s, std::ofstream& ofs) const; ///< Util for save
   void loadString(std::string& s, std::ifstream& ifs) const; ///< Util for load
 
   std::ostringstream what_;
 
-  std::map<std::string, uint32_t> val2code; ///< Map from value to code
+  std::map<std::string, uint64_t> val2code; ///< Map from value to code
   std::vector<std::string> code2val; ///< Map from code to value
 
-  std::vector< std::vector<KeyEdge> > keyEdges; ///< A set of non-searchable key/values to be indexed 
-  std::map<std::string, uint32_t> tmpEdges; ///< A set of searchable key/values to be indexed
+  std::vector<KeyEdge> keyEdges; ///< A set of non-searchable key/values to be indexed 
+  std::map<std::string, uint64_t> tmpEdges; ///< A set of searchable key/values to be indexed
 
   std::vector< std::vector<FujimapBlock> > fbs; ///< Succinct Associative Arrays
 
-  uint32_t seed; ///< Seed for hash
-  uint32_t fpWidth; ///< A false positive rate (prob. of false psoitive is 2^{-fpWidth})
-  uint32_t tmpN; ///< A size of tempolary map
+  uint64_t seed; ///< Seed for hash
+  uint64_t fpWidth; ///< A false positive rate (prob. of false psoitive is 2^{-fpWidth})
+  uint64_t tmpN; ///< A size of tempolary map
 };
 
 }

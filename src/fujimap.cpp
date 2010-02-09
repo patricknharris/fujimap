@@ -41,15 +41,15 @@ Fujimap::Fujimap() : seed(0x123456), fpWidth(FPWIDTH), tmpN(TMPN) {
 Fujimap::~Fujimap(){
 }
 
-void Fujimap::initSeed(const uint32_t seed_){
+void Fujimap::initSeed(const uint64_t seed_){
   seed = seed_;
 }
 
-void Fujimap::initFP(const uint32_t fpWidth_){
+void Fujimap::initFP(const uint64_t fpWidth_){
   fpWidth = fpWidth_;
 }
 
-void Fujimap::initTmpN(const uint32_t tmpN_){
+void Fujimap::initTmpN(const uint64_t tmpN_){
   tmpN = tmpN_;
 }
 
@@ -62,23 +62,23 @@ void Fujimap::setString(const std::string& key, const std::string& value){
 
 void Fujimap::setStringTemporary(const std::string& key, const std::string& value){
   KeyEdge k(key, getCode(value), seed);
-  keyEdges[k.getBlock()].push_back(k);
+  keyEdges.push_back(k);
 }
 
-void Fujimap::setInteger(const std::string& key, const uint32_t value){
+void Fujimap::setInteger(const std::string& key, const uint64_t value){
   tmpEdges[key] = value;
   if (tmpEdges.size() == tmpN){
     build();
   } 
 }
 
-void Fujimap::setIntegerTemporary(const std::string& key, const uint32_t value){
+void Fujimap::setIntegerTemporary(const std::string& key, const uint64_t value){
   KeyEdge k(key, value, seed);
-  keyEdges[k.getBlock()].push_back(k);
+  keyEdges.push_back(k);
 }
 
-uint32_t Fujimap::getCode(const std::string& value){
-  map<string, uint32_t>::const_iterator it = val2code.find(value);
+uint64_t Fujimap::getCode(const std::string& value){
+  map<string, uint64_t>::const_iterator it = val2code.find(value);
   if (it != val2code.end()){
     return it->second;
   } else {
@@ -107,32 +107,37 @@ bool keyLt(const KeyEdge& v1,
 
 
 int Fujimap::build(){
-  for (map<string, uint32_t>::const_iterator it = tmpEdges.begin();
+  
+  for (map<string, uint64_t>::const_iterator it = tmpEdges.begin();
        it != tmpEdges.end(); ++it){
-    KeyEdge ke(it->first, it->second, seed);
-    keyEdges[ke.getBlock()].push_back(ke);
+    keyEdges.push_back(KeyEdge(it->first, it->second, seed));
   }
   tmpEdges.clear();
 
-  for (size_t i = 0; i < keyEdges.size(); ++i){
-    reverse(keyEdges[i].begin(), keyEdges[i].end());
-    stable_sort(keyEdges[i].begin(), keyEdges[i].end(), keyLt);
-    keyEdges[i].erase(unique(keyEdges[i].begin(), keyEdges[i].end(), keyEq), keyEdges[i].end());
-  }
+  reverse(keyEdges.begin(), keyEdges.end());
+  stable_sort(keyEdges.begin(), keyEdges.end(), keyLt);
+  keyEdges.erase(unique(keyEdges.begin(), keyEdges.end(), keyEq), keyEdges.end());
+  cerr << keyEdges.size() << endl;
 
   if (getKeyNum() == 0){
     return 0; // not build
   }
 
+  uint64_t blockNum = static_cast<uint64_t>((keyEdges.size() + KEYBLOCK - 1) / KEYBLOCK);
+  vector< vector< KeyEdge > > workBlocks(blockNum);
+  for (size_t i = 0; i < keyEdges.size(); ++i){
+    workBlocks[keyEdges[i].getBlock(blockNum)].push_back(keyEdges[i]);
+  }
+
   vector<FujimapBlock> cur;
-  for (uint32_t i = 0; i < keyEdges.size(); ++i){
+  for (uint32_t i = 0; i < workBlocks.size(); ++i){
     cerr << i << endl;
     FujimapBlock fmb;
-    if (fmb.build(keyEdges[i], seed, fpWidth) == -1){
+    if (fmb.build(workBlocks[i], seed, fpWidth) == -1){
       what_ << "fujimapBlock build error" << endl;
       return -1;
     }
-    vector<KeyEdge>().swap(keyEdges[i]);
+    vector<KeyEdge>().swap(workBlocks[i]);
 
     cur.push_back(fmb);
 
@@ -142,11 +147,7 @@ int Fujimap::build(){
 }
 
 size_t Fujimap::getKeyNum() const{
-  size_t keyNum = 0;
-  for (size_t i = 0; i < keyEdges.size(); ++i){
-    keyNum += keyEdges[i].size();
-  }
-  keyNum += tmpEdges.size();
+  size_t keyNum = tmpEdges.size() + keyEdges.size();
 
   for (size_t i = 0; i < fbs.size(); ++i){
     for (size_t j = 0; j < fbs[i].size(); ++j){
@@ -167,8 +168,8 @@ std::string Fujimap::getString(const std::string& key) const {
   }
 }
 
-uint32_t Fujimap::getInteger(const std::string& key) const {
-  map<string, uint32_t>::const_iterator it = tmpEdges.find(key);
+uint64_t Fujimap::getInteger(const std::string& key) const {
+  map<string, uint64_t>::const_iterator it = tmpEdges.find(key);
   if (it != tmpEdges.end()){
     return it->second;
   }
@@ -176,7 +177,7 @@ uint32_t Fujimap::getInteger(const std::string& key) const {
   for (vector< vector<FujimapBlock> >::const_reverse_iterator it2 = fbs.rbegin();
        it2 != fbs.rend(); ++it2){
     KeyEdge ke(key, 0, seed);
-    uint32_t ret = (*it2)[ke.getBlock()].getVal(ke);
+    uint32_t ret = (*it2)[ke.getBlock(it2->size())].getVal(ke);
     if (ret != NOTFOUND){
       //cerr << "found in " << it2 - fbs.rbegin() << " block" << endl;
       return ret;
@@ -211,12 +212,7 @@ int Fujimap::load(const char* index){
   ifs.read((char*)(&keyEdgeSize), sizeof(keyEdgeSize));
   keyEdges.resize(keyEdgeSize);
   for (uint64_t i = 0; i < keyEdgeSize; ++i){
-    uint64_t keyEdgeInSize = 0;
-    ifs.read((char*)(&keyEdgeInSize), sizeof(keyEdgeInSize));
-    keyEdges[i].resize(keyEdgeInSize);
-    for (uint64_t j = 0; j < keyEdgeInSize; ++j){
-      keyEdges[i][j].load(ifs);
-    }
+    keyEdges[i].load(ifs);
   }
 
   uint64_t tmpEdgeSize = 0;
@@ -284,16 +280,12 @@ int Fujimap::save(const char* index){
   uint64_t keyEdgeSize = static_cast<uint64_t>(keyEdges.size());
   ofs.write((const char*)(&keyEdgeSize), sizeof(keyEdgeSize));
   for (uint64_t i = 0; i < keyEdgeSize; ++i){
-    uint64_t keyEdgeInSize = static_cast<uint64_t>(keyEdges[i].size());
-    ofs.write((const char*)(&keyEdgeInSize), sizeof(keyEdgeInSize));
-    for (uint64_t j = 0; j < keyEdgeInSize; ++j){
-      keyEdges[i][j].save(ofs);
-    }
+    keyEdges[i].save(ofs);
   }
 
   uint64_t tmpEdgeSize = static_cast<uint64_t>(tmpEdges.size());
   ofs.write((const char*)(&tmpEdgeSize), sizeof(tmpEdgeSize));
-  for (map<string, uint32_t>::const_iterator it = tmpEdges.begin();
+  for (map<string, uint64_t>::const_iterator it = tmpEdges.begin();
        it != tmpEdges.end(); ++it){
     saveString(it->first, ofs);
     ofs.write((const char*)(&it->second), sizeof(it->second));
