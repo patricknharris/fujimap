@@ -48,9 +48,9 @@ public:
   ~FujimapBlock(); ///< Default Destructor
 
   int build(std::vector<KeyEdge>& keyEdges,
-	    const uint32_t seed, const uint32_t fpWidth); ///< build a associative map
-  uint32_t getVal(const std::string& key) const; ///< return a value corresponding to the given key
-  uint32_t getVal(const KeyEdge& ke) const; ///< return a value corresponding to the given KeyEdge
+	    const uint64_t seed, const uint64_t fpWidth); ///< build an associative map
+  uint64_t getVal(const std::string& key) const; ///< return a value corresponding to the given key
+  uint64_t getVal(const KeyEdge& ke) const; ///< return a value corresponding to the given KeyEdge
   void save(std::ofstream& ofs); ///< save the status in ofs
   void load(std::ifstream& ifs); ///< load the status from ifs
 
@@ -59,19 +59,17 @@ public:
 private:
   int build_(std::vector<KeyEdge>& keyEdges);
 
-  uint32_t log2(uint32_t x);
+  uint64_t log2(uint64_t x);
   void test();
 
   BitVec B;
 
-  uint32_t keyNum;
-  uint32_t codeNum;
-  uint32_t codeWidth;
-  uint32_t fpWidth;
-  uint32_t seed;
-  uint32_t bn;
-
-
+  uint64_t keyNum;
+  uint64_t codeNum;
+  uint64_t codeWidth;
+  uint64_t fpWidth;
+  uint64_t seed;
+  uint64_t bn;
 };
 
 }

@@ -37,11 +37,11 @@ public:
   BitVec(const size_t size);
 
   void resize(const size_t size);
-  uint32_t getBit (const size_t pos) const;
-  uint32_t getBits(const size_t pos, const size_t len) const;
-  void buildSelect();
-  uint32_t select(const size_t ind) const;
-  uint32_t leftZeros(const size_t ind) const;
+  uint64_t getBit (const size_t pos) const;
+  uint64_t getBits(const size_t pos, const size_t len) const;
+  //void buildSelect();
+  //uint64_t select(const size_t ind) const;
+  //uint64_t leftZeros(const size_t ind) const;
   void setBit(const size_t pos);
 
   size_t bvSize() const;
@@ -50,10 +50,10 @@ public:
   void read(std::ifstream& ifs);
 
 private:
-  static uint32_t popCount(const uint32_t i);
+  //static uint32_t popCount(const uint32_t i);
 
-  std::vector<uint32_t> bv;
-  std::vector<uint32_t> cum;
+  std::vector<uint64_t> bv;
+  std::vector<uint64_t> cum;
 };
 
 #endif /// BITVEC_HPP__

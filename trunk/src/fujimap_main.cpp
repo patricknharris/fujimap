@@ -29,11 +29,10 @@ int buildFromFile(const cmdline::parser& p){
     }
     if (p == 0) continue;
     if (p+1 == line.size()) continue;
-    //addIndex(line.substr(0, p), line.substr(p+1));
     uint32_t val = atoi(line.substr(p+1).c_str());
     string   key = line.substr(0, p);
-    //cerr << "add " << key << " " << val << endl;
     fm.setIntegerTemporary(key, val);
+    
   }
 
   cerr << "keyNum:" << fm.getKeyNum() << endl;

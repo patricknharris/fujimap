@@ -56,15 +56,18 @@ size_t BitVec::bvSize() const {
   return bv.size();
 }
 
-uint32_t BitVec::popCount(const uint32_t i) {
-  uint32_t r = i;
+/*
+uint64_t BitVec::popCount(const uint32_t i) {
+  uint64_t r = i;
   r = ((r & 0xAAAAAAAA) >> 1) + (r & 0x55555555);
   r = ((r & 0xCCCCCCCC) >> 2) + (r & 0x33333333);
   r = ((r >> 4) + r) & 0x0F0F0F0F;
   r = (r>>8) + r;
   return ((r>>16) + r) & 0x3F;
 }
+*/
 
+/*
 void BitVec::buildSelect(){
   uint32_t sum = 0;
   for (size_t i = 0; i < bv.size(); ++i){
@@ -73,11 +76,15 @@ void BitVec::buildSelect(){
   }
   cum.push_back(sum); // sentinel
 }
+*/
 
+/*
 uint32_t BitVec::leftZeros(const size_t ind) const {
   return select(ind) - ind;
 }
+*/
 
+/*
 uint32_t BitVec::select(const size_t ind) const {
   uint32_t x = ind+1;
   size_t blockPos = lower_bound(cum.begin(), cum.end(), x) - cum.begin();
@@ -97,29 +104,30 @@ uint32_t BitVec::select(const size_t ind) const {
     }
   }
 }
+*/
 
 void BitVec::resize(const size_t size){
-  bv.resize((size + 32-1)/32);
+  bv.resize((size + 64-1)/64);
   fill(bv.begin(), bv.end(), 0);
 }
 
-uint32_t BitVec::getBit(const size_t pos) const{
-  return (bv[(pos/32) % bv.size()] >> (pos%32)) & 1U;
+uint64_t BitVec::getBit(const size_t pos) const{
+  return (bv[(pos/64) % bv.size()] >> (pos%64)) & 1LLU;
 }
 
-uint32_t BitVec::getBits(const size_t pos, const size_t len) const {
-  assert(len <= 32);
-  uint32_t blockInd1    = pos / 32;
-  uint32_t blockOffset1 = pos % 32;
-  if (blockOffset1 + len <= 32){
-    return (bv[blockInd1] >> blockOffset1) & ((1U << len) - 1);
+uint64_t BitVec::getBits(const size_t pos, const size_t len) const {
+  assert(len <= 64);
+  uint64_t blockInd1    = pos / 64;
+  uint64_t blockOffset1 = pos % 64;
+  if (blockOffset1 + len <= 64){
+    return (bv[blockInd1] >> blockOffset1) & ((1LLU << len) - 1);
   } else {
-    uint32_t blockInd2    = ((pos + len - 1) / 32) % bv.size();
-    return  ((bv[blockInd1] >> blockOffset1) + (bv[blockInd2] << (32 - blockOffset1))) & ((1U << len) - 1);
+    uint64_t blockInd2    = ((pos + len - 1) / 64) % bv.size();
+    return  ((bv[blockInd1] >> blockOffset1) + (bv[blockInd2] << (64 - blockOffset1))) & ((1LLU << len) - 1);
   }
 }
 
 void BitVec::setBit(const size_t pos) {
-  bv[(pos/32) % bv.size()] |= (1U << (pos % 32));
+  bv[(pos/64) % bv.size()] |= (1LLU << (pos % 64));
 }
 

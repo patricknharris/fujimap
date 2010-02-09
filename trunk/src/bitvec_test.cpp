@@ -47,14 +47,6 @@ int main(int argc, char* argv[]){
     }
   }
 
-  cerr << "select test" << endl;
-  bv.buildSelect();
-  for (size_t i = 0; i < sv.size(); ++i){
-    if (sv[i] != bv.select(i)){
-      cerr << "select error i:" << i << " sv[i]:" << sv[i] << " bv.select(i):" << bv.select(i) << endl;
-      return -1;
-    }
-  }
   cerr << "done" << endl;
   
 
