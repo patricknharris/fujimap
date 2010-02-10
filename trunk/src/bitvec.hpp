@@ -43,11 +43,14 @@ public:
   //uint64_t select(const size_t ind) const;
   //uint64_t leftZeros(const size_t ind) const;
   void setBit(const size_t pos);
+  void setBits(const size_t pos, const size_t len, const uint64_t bits);
 
   size_t bvSize() const;
 
   void write(std::ofstream& ofs);
   void read(std::ifstream& ifs);
+
+  static void printBit(const uint64_t v, const uint64_t len);
 
 private:
   //static uint32_t popCount(const uint32_t i);

@@ -47,43 +47,31 @@ FujimapBlock::~FujimapBlock(){
 }
 
 uint64_t FujimapBlock::getVal(const string& key) const{
-  KeyEdge ke(key, 0, seed);
-  return getVal(ke);
+  return getVal(KeyEdge(key, 0, seed));
 }
 
 uint64_t FujimapBlock::getVal(const KeyEdge& ke) const{
   if (B.bvSize() == 0){
     return NOTFOUND;
   }
-  uint64_t code = 0;
-
-  uint64_t checkCode = 0;
-  for (uint64_t i = 0; i < fpWidth; ++i){
-    uint64_t bit = 0;
-    for (uint64_t j = 0; j < R; ++j){
-      bit ^= B.getBit(ke.get(j, bn) + i);
-    }
-    checkCode |= (bit << i);
+  uint64_t codeLen = fpWidth + codeWidth;
+  uint64_t bits = 0;
+  for (uint64_t i = 0; i < R; ++i){
+    bits ^= B.getBits(ke.get(i, bn) * codeLen, codeLen);
   }
 
-  if (checkCode != (1U << fpWidth) - 1){
+  if ((bits & ((1LLU << fpWidth)-1)) != ke.getBlock(1LLU << fpWidth)){
+    //cerr << "orig:"; BitVec::printBit(bits & ((1LLU << fpWidth)-1), fpWidth);
+    //cerr << "targ:"; BitVec::printBit(ke.getBlock(1LLU << fpWidth), fpWidth);
     return NOTFOUND;
   }
 
-  for (uint64_t i = 0; i < codeWidth; ++i){
-    uint64_t bit = 0;
-    for (uint64_t j = 0; j < R; ++j){
-      bit ^= B.getBit(ke.get(j, bn) + i + fpWidth);
-    }
-    code |= (bit << i);
-  }
-
+  uint64_t code = bits >> fpWidth;
   if (code > codeNum){
     return NOTFOUND;
   }
 
   return code;
-
 }
 
 uint64_t FujimapBlock::log2(uint64_t x){
@@ -101,94 +89,80 @@ uint64_t FujimapBlock::log2(uint64_t x){
 
 int FujimapBlock::build_(vector<KeyEdge>& keyEdges){
   // set keyEdge
-  B.resize(bn * R);
-  uint64_t totalBN = B.bvSize() * 64;
-  uint64_t codeLen = codeWidth + fpWidth;
-  vector<uint8_t> deg(totalBN);
-  vector<uint64_t> offset(totalBN+1);
-  vector<uint64_t> edges(keyNum * codeLen * R);
-  BitVec visitedVerticies(totalBN);
+  const uint64_t codeLen = codeWidth + fpWidth;
+  assert(codeLen <= 63);
+  vector<uint64_t> edges(keyNum * R);
+  vector<uint8_t>  degs(bn * R);
+  vector<uint64_t> offsets(bn * R + 1);
 
-  cerr << "deg check" << endl;
   for (size_t i = 0; i < keyEdges.size(); ++i){
     const KeyEdge& ke(keyEdges[i]);
     for (uint64_t j = 0; j < R; ++j){
-      for (uint64_t k = 0; k < codeLen; ++k){
-	uint64_t t = (ke.get(j, bn) + k) % totalBN;
-	if (deg[t] == 0xFF) {
-	  return -1;
-	}
-	deg[t]++;
+      uint64_t t = ke.get(j, bn);
+      if (degs[t] == 0xFF) {
+	return -1;
       }
+      degs[t]++;
     }
   }
 
   uint64_t sum = 0;
   //BitVec offset(keyNum * codeLen * R + 1 + totalBN);
-  for (uint64_t i = 0; i < totalBN; ++i){
-    //offset.setBit(sum + i);
-    offset[i] = sum;
-    sum += deg[i];
-    deg[i] = 0;
+  for (size_t i = 0; i < degs.size(); ++i){
+    offsets[i] = sum;
+    sum += degs[i];
+    degs[i] = 0;
   }
   //offset.setBit(sum + totalBN);
   //offset.buildSelect();
-  offset[totalBN] = sum;
-  assert(sum == keyNum * codeLen * R);
+  offsets.back() = sum;
+  assert(sum == keyNum * R);
 
-  cerr << "edge set" << endl;
   for (size_t i = 0; i < keyEdges.size(); ++i){
     const KeyEdge& ke(keyEdges[i]);
     for (uint64_t j = 0; j < R; ++j){
-      for (uint64_t k = 0; k < codeLen; ++k){
-	uint64_t t = (ke.get(j, bn) + k) % totalBN;
-	assert(offset[t] + deg[t] < edges.size());
-	edges[offset[t] + deg[t]] = i * codeLen + k;
-	deg[t]++;
-      }
+      uint64_t t = ke.get(j, bn);
+      edges[offsets[t] + degs[t]++] = i;
     }
   }
 
-  vector<uint8_t> visitedEdges(keyNum * codeLen);
+  BitVec visitedEdges(keyNum);
   std::queue<uint64_t> q;
-  for (uint64_t i = 0; i < totalBN; ++i){
-    if (deg[i] == 1) {
-      uint64_t t = edges[offset[i]];
-      q.push(t);
-      assert(offset[i+1] - offset[i] == 1);
+  for (size_t i = 0; i < degs.size(); ++i){
+    if (degs[i] == 1) {
+      q.push(edges[offsets[i]]);
+      assert(offsets[i+1] - offsets[i] == 1);
     }
   }
 
-  cerr << "extractEdge" << endl;
   vector<pair<uint64_t, uint8_t> > extractedEdges;
   uint64_t deletedNum = 0;
 
-  size_t searchNum = 0;
   while (!q.empty()){
-    uint64_t v       = q.front();
+    uint64_t v = q.front();
     q.pop();
-    //if (visitedEdges.getBit(v)) continue;
-    if (visitedEdges[v]) continue;
-    uint64_t keyID   = v / codeLen;
-    uint64_t codePos = v % codeLen;
-    visitedEdges[v] = 1;
+    if (visitedEdges.getBit(v)) continue;
+    visitedEdges.setBit(v);
     ++deletedNum;
 
-    const KeyEdge& ke(keyEdges[keyID]);
+    const KeyEdge& ke(keyEdges[v]);
     int choosed = -1;
     for (uint64_t i = 0; i < R; ++i){
-      const uint64_t t = (ke.get(i, bn) + codePos) % totalBN;
-      --deg[t];
-      if (deg[t] == 0){
+      const uint64_t t = ke.get(i, bn);
+      --degs[t];
+
+      if (degs[t] == 0){
 	choosed = i;
-      } else if (deg[t] == 1) {
-	uint64_t end = offset[t+1];
-	for (uint64_t j = offset[t]; j < end; ++j){
-	  searchNum++;
-	  if (!visitedEdges[edges[j]]){
-	    q.push(edges[j]);
-	    break;
-	  }
+	continue;
+      } else if (degs[t] >= 2) {
+	continue;
+      }
+      // degs[t] == 1
+      uint64_t end = offsets[t+1];
+      for (uint64_t j = offsets[t]; j < end; ++j){
+	if (!visitedEdges.getBit(edges[j])){
+	  q.push(edges[j]);
+	  break;
 	}
       }
     }
@@ -196,47 +170,45 @@ int FujimapBlock::build_(vector<KeyEdge>& keyEdges){
     extractedEdges.push_back(make_pair(v, choosed));
   }
 
-  if (deletedNum != keyNum * codeLen){
+  if (deletedNum != keyNum){
     return -1;
   }
   assert(q.empty());
 
-  cerr << searchNum << " " << (double)searchNum / deletedNum << endl;
+  B.resize(bn * codeLen * R);
 
-  cerr << "setBit" << endl;
+  BitVec visitedVerticies(bn * R);
   reverse(extractedEdges.begin(), extractedEdges.end());
   for (vector<pair<uint64_t, uint8_t> >::const_iterator it = 
 	 extractedEdges.begin(); it != extractedEdges.end(); ++it){
     const uint64_t v       = it->first;
-    const uint64_t keyID   = v / codeLen;
-    const uint64_t codePos = v % codeLen;
-    const KeyEdge& ke(keyEdges[keyID]);
+    const KeyEdge& ke(keyEdges[v]);
 
-    uint64_t bit = (codePos < fpWidth) ? 1U :
-      (ke.code >> (codePos - fpWidth)) & 1U;
+    uint64_t mask = ke.getBlock(1LLU << fpWidth);
+    uint64_t bits = (ke.code << fpWidth) + mask; // ke.code 1111
+
+    //BitVec::printBit(bits, codeLen);
+
     for (uint64_t i = 0; i < R; ++i){
-      const uint64_t t = (ke.get(i, bn) + codePos) % totalBN;
+      const uint64_t t = ke.get(i, bn);
       if (!(visitedVerticies.getBit(t))){
 	continue;
       }
-      bit ^= B.getBit(t);
+      bits ^= B.getBits(t * codeLen, codeLen);
     }
 
-    const uint64_t setPos = (ke.get(it->second, bn) + codePos);
-    if (bit){
-      B.setBit(setPos);
-    }
+    const uint64_t setPos = ke.get(it->second, bn);
+    B.setBits(setPos * codeLen, codeLen, bits);
     visitedVerticies.setBit(setPos);
   }
 
-  cerr << "end" << endl;
   return 0;
 }
 
 
 int FujimapBlock::build(vector<KeyEdge>& keyEdges,
 			const uint64_t seed_, const uint64_t fpWidth_){
-  seed     =  seed_;
+  seed     = seed_;
   keyNum   = static_cast<uint64_t>(keyEdges.size());
   fpWidth  = fpWidth_;
 
@@ -247,7 +219,7 @@ int FujimapBlock::build(vector<KeyEdge>& keyEdges,
     }
   }
   codeWidth = log2(codeNum);
-  bn        = (uint64_t)(keyNum * (codeWidth + fpWidth) * C_R / (double)R + 100);
+  bn        = (uint64_t)(keyNum * C_R / (double)R + 100);
 
   cerr << " keyNum:" << keyNum << endl
        << "codeNum:" << codeNum << endl
@@ -288,7 +260,7 @@ void FujimapBlock::load(ifstream& ifs){
   B.read(ifs);
 
   codeWidth = log2(codeNum);
-  bn        = (uint64_t)(keyNum * (codeWidth + fpWidth) * C_R / (double)R + 100);
+  bn        = (uint64_t)(keyNum * C_R / (double)R + 100);
 }
 
 }

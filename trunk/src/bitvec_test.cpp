@@ -47,6 +47,25 @@ int main(int argc, char* argv[]){
     }
   }
 
+  BitVec bv2(n);
+  for (uint64_t i = 0; i < n; ++i){
+    bv2.setBit(i);
+  }
+
+  size_t offset = 0;
+  for (int i = 0; i < 63; ++i){
+    if ((i % 2) == 0) {
+      bv2.setBits(offset, i+1, 0);
+    }
+    offset += (i+1);
+  }
+
+  offset = 0;
+  for (int i = 0; i < 63; ++i){
+    uint64_t bits = bv2.getBits(offset, i+1);
+    BitVec::printBit(bits, i+1);
+    offset += (i+1);
+  }
   cerr << "done" << endl;
   
 

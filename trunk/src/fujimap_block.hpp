@@ -56,10 +56,12 @@ public:
 
   size_t getKeyNum() const; ///<return the number of registered keys
 
+  static uint64_t log2(uint64_t x);
+
 private:
   int build_(std::vector<KeyEdge>& keyEdges);
 
-  uint64_t log2(uint64_t x);
+  
   void test();
 
   BitVec B;
