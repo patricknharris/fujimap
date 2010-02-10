@@ -60,26 +60,29 @@ int buildFromFile(const cmdline::parser& p){
   cerr << "load done." << endl;
   cerr << fm2.getKeyNum() << endl;
 
+  int fnErrorN = 0;
   for (map<string, uint32_t >::const_iterator it = keyValues.begin();
        it != keyValues.end(); ++it){
     uint32_t ret = fm2.getInteger(it->first);
     if (it->second != ret){
+      fnErrorN++;
       cerr << "Error: " << it->first << endl
 	   << "correct:" << it->second << " " << " incorrect:" << ret << endl;
       
     }
   }
+  cerr << "fnErrorN:" << fnErrorN << endl;
   
-  int errorN = 0;
+  int fpErrorN = 0;
   for (int i = 0; i < 10000; ++i){
     ostringstream os;
     os << i << " " << i+1 << " " << i+2;
     uint32_t ret = fm2.getInteger(os.str());
     if (ret != fujimap_tool::NOTFOUND){
-      errorN++;
+      fpErrorN++;
     }
   }
-  cerr << errorN << "/" << 10000 << endl;
+  cerr << fpErrorN << "/" << 10000 << endl;
 
   return 0;
 }
@@ -87,9 +90,10 @@ int buildFromFile(const cmdline::parser& p){
 
 int main(int argc, char* argv[]){
   cmdline::parser p;
-  p.add<string>("dic", 'd', "dictionary", false, "");
-  p.add<int>("fpwidth", 'f', "false positive rate 2^{-f} (0 <= f < 31) ", false, 0);
-  p.add<int>("tmpN", 't', "temporarySize", false, 1000000);
+  p.add<string>("dic", 'd', "dictionary", true, "");
+  p.add<int>("fpwidth", 'f', "false positive rate 2^{-f} (0 <= f < 31) ", false, fujimap_tool::FPWIDTH);
+  p.add<int>("tmpN", 't', "temporarySize", false, fujimap_tool::TMPN);
+  p.add<string>("index", 'i', "index", true, "");
   p.add("help", 'h', "print this message");
   p.set_progam_name("fujimap_test");
   

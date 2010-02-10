@@ -90,25 +90,22 @@ void hash(const string& str, const uint64_t seed,
 
 
 KeyEdge::KeyEdge(const string& str, const uint64_t code, 
-		 const uint64_t seed) : code(code){
+		 const uint64_t seed) : v(R), code(code){
   hash(str, seed, v[0], v[1], v[2]);
 }
 
-KeyEdge::KeyEdge(){
+  KeyEdge::KeyEdge() :  v(R), code(0){
 }
 
 void KeyEdge::save(ofstream& ofs){
   ofs.write((const char*)(&code), sizeof(code));
-  for (uint32_t i = 0; i < R; ++i){
-    ofs.write((const char*)(&v[i]), sizeof(v[i]));
-  }
+  ofs.write((const char*)(&v[0]), sizeof(v[0]) * R);
 }
 
 void KeyEdge::load(ifstream& ifs){
   ifs.read((char*)(&code), sizeof(code));
-  for (uint32_t i = 0; i < R; ++i){
-    ifs.read((char*)(&v[i]), sizeof(v[i]));
-  }
+  ifs.read((char*)(&v[0]), sizeof(v[0]) * R);
+
 }
 
 }

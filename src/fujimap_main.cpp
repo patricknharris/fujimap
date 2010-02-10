@@ -2,6 +2,7 @@
 #include <string>
 #include <fstream>
 #include <cassert>
+#include <stdlib.h>
 #include "cmdline.h"
 #include "fujimap.hpp"
 
@@ -14,6 +15,10 @@ int buildFromFile(const cmdline::parser& p){
   fm.initFP(p.get<int>("fpwidth"));
   fm.initTmpN(p.get<int>("tmpN"));
 
+  fujimap_tool::Fujimap fmlen;
+  fmlen.initFP(p.get<int>("fpwidth"));
+  fmlen.initTmpN(p.get<int>("tmpN"));
+
   ifstream ifs(fn);
   if (!ifs){
     cerr << "Unable to open " << fn << endl;
@@ -22,28 +27,29 @@ int buildFromFile(const cmdline::parser& p){
 
   string line;
   while (getline(ifs, line)){
-    size_t p = line.find('\t');
+    size_t p = line.find_last_of('\t');
     if (p == string::npos){
       cerr << "Warning: not tab found : " << line << endl;
       continue;
     }
-    if (p == 0) continue;
-    if (p+1 == line.size()) continue;
-    uint32_t val = atoi(line.substr(p+1).c_str());
+    if (p == 0 || p+1 == line.size()) continue; // no key or no value
+    uint64_t val = strtoll(line.substr(p+1).c_str(), NULL, 10);
     string   key = line.substr(0, p);
-    fm.setIntegerTemporary(key, val);
-    
-  }
 
+    fm.setIntegerTemporary(key, val);
+
+    uint64_t len = fujimap_tool::FujimapBlock::log2(val);
+    fmlen.setIntegerTemporary(key, len); 
+  }
   cerr << "keyNum:" << fm.getKeyNum() << endl;
 
-  int ret = fm.build(); 
+  int ret = fmlen.build(); 
   if (ret == -1){
     return -1;
   }
   cerr << "build done." << endl;
 
-  if (fm.save(p.get<string>("index").c_str()) == -1){
+  if (fmlen.save(p.get<string>("index").c_str()) == -1){
     cerr << fm.what() << endl;
     return -1;
   }

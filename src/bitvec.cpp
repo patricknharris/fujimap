@@ -131,3 +131,26 @@ void BitVec::setBit(const size_t pos) {
   bv[(pos/64) % bv.size()] |= (1LLU << (pos % 64));
 }
 
+void BitVec::setBits(const size_t pos, const size_t len, const uint64_t bits){
+  uint64_t blockInd1    = pos / 64;
+  uint64_t blockOffset1 = pos % 64;
+  if (blockOffset1 + len <= 64){
+    bv[blockInd1] = (bv[blockInd1] & (~(((1LLU << len) - 1) << blockOffset1))) |
+      bits << blockOffset1;
+  } else {
+    uint64_t blockOffset2 = (pos + len) % 64;
+    bv[blockInd1] = (bv[blockInd1] & ((1LLU << blockOffset1) - 1)) | (bits << blockOffset1);
+    bv[blockInd1+1] = (bv[blockInd1+1] & (~((1LLU << blockOffset2) - 1))) | (bits >> (64 - blockOffset1));
+  }
+}
+
+void BitVec::printBit(const uint64_t v, const uint64_t len){
+  assert(len < 64);
+  for (uint64_t i = 0; i < len; ++i){
+    cerr << ((v >> i) & 1LLU);
+    if ((i+1) % 8 == 0) {
+      cerr << " " ;
+    }
+  }
+  cerr << endl;
+}
