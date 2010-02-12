@@ -109,15 +109,12 @@ int Fujimap::build(){
     return 0; // not build
   }
 
-  cerr << keyEdges.size() << endl;
-
   uint64_t blockNum = static_cast<uint64_t>((keyEdges.size() + KEYBLOCK - 1) / KEYBLOCK);
   vector< vector< KeyEdge > > workBlocks(blockNum);
   for (size_t i = 0; i < keyEdges.size(); ++i){
     workBlocks[keyEdges[i].getBlock(blockNum)].push_back(keyEdges[i]);
   }
   keyEdges.clear();
-  cerr << "blockNum:" << blockNum << endl;
 
   vector<FujimapBlock> cur;
   for (uint32_t i = 0; i < workBlocks.size(); ++i){
@@ -168,7 +165,6 @@ uint64_t Fujimap::getInteger(const std::string& key) const {
     KeyEdge ke(key, 0, seed);
     uint64_t ret = (*it2)[ke.getBlock(it2->size())].getVal(ke);
     if (ret != NOTFOUND){
-      //cerr << "found in " << it2 - fbs.rbegin() << " block" << endl;
       return ret;
     }
   }
@@ -192,8 +188,6 @@ int Fujimap::load(const char* index){
   for (size_t i = 0; i < code2val.size(); ++i){
     val2code[code2val[i]] = i;
   }
-
-  cerr << "val2code:" << val2code.size() << endl;
 
   ifs.read((char*)(&seed), sizeof(seed));
   ifs.read((char*)(&fpWidth), sizeof(fpWidth));
@@ -220,11 +214,9 @@ int Fujimap::load(const char* index){
   uint64_t fbsSize = 0;
   ifs.read((char*)(&fbsSize), sizeof(fbsSize));
   fbs.resize(fbsSize);
-  cerr << "fbsSize:" << fbsSize << endl;
   for (size_t i = 0; i < fbs.size(); ++i){
     uint64_t fbsInSize = 0;
     ifs.read((char*)(&fbsInSize), sizeof(fbsInSize));
-    cerr << "fbsInSize:" << fbsInSize << endl;
     fbs[i].resize(fbsInSize);
     for (size_t j = 0; j < fbs[i].size(); ++j){
       fbs[i][j].load(ifs);

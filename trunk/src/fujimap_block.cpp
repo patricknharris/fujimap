@@ -61,8 +61,6 @@ uint64_t FujimapBlock::getVal(const KeyEdge& ke) const{
   }
 
   if ((bits & ((1LLU << fpWidth)-1)) != ke.getBlock(1LLU << fpWidth)){
-    //cerr << "orig:"; BitVec::printBit(bits & ((1LLU << fpWidth)-1), fpWidth);
-    //cerr << "targ:"; BitVec::printBit(ke.getBlock(1LLU << fpWidth), fpWidth);
     return NOTFOUND;
   }
 
@@ -221,11 +219,13 @@ int FujimapBlock::build(vector<KeyEdge>& keyEdges,
   codeWidth = log2(codeNum);
   bn        = (uint64_t)(keyNum * C_R / (double)R + 100);
 
+  /*
   cerr << " keyNum:" << keyNum << endl
        << "codeNum:" << codeNum << endl
        << "codeWid:" << codeWidth << endl
        << "     bn:" << bn << endl
        << "fpWidth:" << fpWidth << endl;
+  */
 
 
   bool succeeded = false;

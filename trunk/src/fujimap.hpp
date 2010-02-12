@@ -49,9 +49,9 @@ public:
   Fujimap(); ///< Default Constructor
   ~Fujimap(); ///< Default Destructor
 
-  void initSeed(const uint64_t seed_); ///< Set a seed for hash function
+  void initSeed(const uint64_t seed_);  ///< Set a seed for hash function
   void initFP(const uint64_t fpWidth_); ///< Set a false postive rate (prob. of false positive is  2^{-fpWidth_})
-  void initTmpN(const uint64_t tmpN); ///< Set a size of tempolary map
+  void initTmpN(const uint64_t tmpN_);  ///< Set a size of tempolary map
 
   void setString(const std::string& key, const std::string& value); ///< Store a (key, value). and seachable immediately
   void setStringTemporary(const std::string& key, const std::string& value); ///< Store a (key, value) and NOT seachable immediately
@@ -69,12 +69,13 @@ public:
 
   std::string what() const; ///< Report the current status (after error occured)
   size_t getKeyNum() const; ///< Return the number of registered keys.
+
 private:
   uint64_t getCode(const std::string& value); ///< Return corresponding code of a given value
   void saveString(const std::string& s, std::ofstream& ofs) const; ///< Util for save
   void loadString(std::string& s, std::ifstream& ifs) const; ///< Util for load
 
-  std::ostringstream what_;
+  std::ostringstream what_; ///< Store a internal state information
 
   std::map<std::string, uint64_t> val2code; ///< Map from value to code
   std::vector<std::string> code2val; ///< Map from code to value
