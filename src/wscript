@@ -34,4 +34,10 @@ def build(bld):
        cxxflags     = ['-O2', '-Wall'],
        target       ='bitvec_test',
        includes     = '.'),
+  task3= bld(features='cxx cprogram',
+       source       = 'fujimap_performancetest.cpp',
+       cxxflags     = ['-O2', '-Wall'],
+       target       ='fujimap_performancetest',
+       includes     = '.',
+       uselib_local = 'fujimap')
   bld.install_files('${PREFIX}/include', 'fujimap.hpp')

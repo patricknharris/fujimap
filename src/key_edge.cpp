@@ -17,6 +17,7 @@ namespace fujimap_tool{
   c -= a; c -= b; c ^= (b >> 15);
 */
 
+  /*
 #define bob_mix(a, b, c) \
     a -= b; a -= c; a ^= (c>>43); \
     b -= c; b -= a; b ^= (a<<9); \
@@ -30,8 +31,12 @@ namespace fujimap_tool{
     a -= b; a -= c; a ^= (c>>12); \
     b -= c; b -= a; b ^= (a<<18); \
     c -= a; c -= b; c ^= (b>>22); 
+  */
 
-
+#define bob_mix(a, b, c) \
+    a -= b; a -= c; a ^= (c>>43); \
+    b -= c; b -= a; b ^= (a<<9); \
+    c -= a; c -= b; c ^= (b>>8); 
 
 uint64_t get64bit(const uint8_t* v) {
   return (uint64_t)v[0] | ((uint64_t)v[1] << 8) | ((uint64_t)v[2] << 16) | ((uint64_t)v[3] << 24) | 
@@ -56,7 +61,8 @@ void hash(const string& str, const uint64_t seed,
   }
 
   c += static_cast<uint64_t>(str.size());
-  switch(len)              /* all the case statements fall through */
+  switch(len)
+    /* all the case statements fall through */
     {
     case 23: c+=((uint64_t)p[22]<<56);
     case 22: c+=((uint64_t)p[21]<<48);
@@ -90,11 +96,11 @@ void hash(const string& str, const uint64_t seed,
 
 
 KeyEdge::KeyEdge(const string& str, const uint64_t code, 
-		 const uint64_t seed) : v(R), code(code){
+		 const uint64_t seed) : code(code){
   hash(str, seed, v[0], v[1], v[2]);
 }
 
-  KeyEdge::KeyEdge() :  v(R), code(0){
+KeyEdge::KeyEdge() :  code(0){
 }
 
 void KeyEdge::save(ofstream& ofs){

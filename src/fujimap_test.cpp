@@ -40,6 +40,7 @@ int buildFromFile(const cmdline::parser& p){
 
   int ret = fm.build(); 
   if (ret == -1){
+    cerr << fm.what() << endl;
     return -1;
   }
 
@@ -61,13 +62,17 @@ int buildFromFile(const cmdline::parser& p){
   cerr << fm2.getKeyNum() << endl;
 
   int fnErrorN = 0;
+  size_t n = 0;
   for (map<string, uint32_t >::const_iterator it = keyValues.begin();
        it != keyValues.end(); ++it){
     uint32_t ret = fm2.getInteger(it->first);
+    if ((++n % 10000) == 0){
+      cerr << n << endl;
+    }
     if (it->second != ret){
       fnErrorN++;
-      cerr << "Error: " << it->first << endl
-	   << "correct:" << it->second << " " << " incorrect:" << ret << endl;
+      //cerr << "Error: " << it->first << endl
+      //	   << "correct:" << it->second << " " << " incorrect:" << ret << endl;
       
     }
   }

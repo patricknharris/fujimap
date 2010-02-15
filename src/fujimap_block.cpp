@@ -60,7 +60,7 @@ uint64_t FujimapBlock::getVal(const KeyEdge& ke) const{
     bits ^= B.getBits(ke.get(i, bn) * codeLen, codeLen);
   }
 
-  if ((bits & ((1LLU << fpWidth)-1)) != ke.getBlock(1LLU << fpWidth)){
+  if ((bits & ((1LLU << fpWidth)-1)) != ke.getRaw(1, 1LLU << fpWidth)){
     return NOTFOUND;
   }
 
@@ -169,11 +169,14 @@ int FujimapBlock::build_(vector<KeyEdge>& keyEdges){
   }
 
   if (deletedNum != keyNum){
+    cerr << "assignment error deletedNum:" << deletedNum <<
+      "keyNum:" << keyNum << " seed:" << seed << endl;
     return -1;
   }
   assert(q.empty());
 
   B.resize(bn * codeLen * R);
+
 
   BitVec visitedVerticies(bn * R);
   reverse(extractedEdges.begin(), extractedEdges.end());
@@ -182,7 +185,7 @@ int FujimapBlock::build_(vector<KeyEdge>& keyEdges){
     const uint64_t v       = it->first;
     const KeyEdge& ke(keyEdges[v]);
 
-    uint64_t mask = ke.getBlock(1LLU << fpWidth);
+    uint64_t mask = ke.getRaw(1, 1LLU << fpWidth);
     uint64_t bits = (ke.code << fpWidth) + mask; // ke.code 1111
 
     //BitVec::printBit(bits, codeLen);
@@ -226,7 +229,6 @@ int FujimapBlock::build(vector<KeyEdge>& keyEdges,
        << "     bn:" << bn << endl
        << "fpWidth:" << fpWidth << endl;
   */
-
 
   bool succeeded = false;
   for (int iter = 0; iter < 20; ++iter){

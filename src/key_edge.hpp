@@ -25,12 +25,8 @@ struct KeyEdge{
     return (v[i] % bn) + bn * i;
   }
 
-  uint64_t getBlock(const uint64_t blockNum) const{
-    uint64_t x = 0;
-    for (uint32_t i = 0; i < R; ++i){
-      x ^= v[i];
-    }
-    return x % blockNum;
+  uint64_t getRaw(uint64_t i, uint64_t bn) const{
+    return v[i] % bn;
   }
 
   bool operator < (const KeyEdge& k) const {
@@ -43,7 +39,7 @@ struct KeyEdge{
   void save(std::ofstream& ofs);
   void load(std::ifstream& ifs);
 
-  std::vector<uint64_t> v;
+  uint64_t v[3];
   uint64_t code;
 };
 
