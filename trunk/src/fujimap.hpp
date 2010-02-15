@@ -52,6 +52,7 @@ public:
   void initSeed(const uint64_t seed_);  ///< Set a seed for hash function
   void initFP(const uint64_t fpWidth_); ///< Set a false postive rate (prob. of false positive is  2^{-fpWidth_})
   void initTmpN(const uint64_t tmpN_);  ///< Set a size of tempolary map
+  void initKeyBlockN(const uint64_t keyBlockN_); ///< Set a number of blocks in arrays
 
   void setString(const std::string& key, const std::string& value); ///< Store a (key, value). and seachable immediately
   void setStringTemporary(const std::string& key, const std::string& value); ///< Store a (key, value) and NOT seachable immediately
@@ -75,19 +76,20 @@ private:
   void saveString(const std::string& s, std::ofstream& ofs) const; ///< Util for save
   void loadString(std::string& s, std::ifstream& ifs) const; ///< Util for load
 
-  std::ostringstream what_; ///< Store a internal state information
+  std::ostringstream what_; ///< Store a message
 
   std::map<std::string, uint64_t> val2code; ///< Map from value to code
   std::vector<std::string> code2val; ///< Map from code to value
 
-  std::vector<KeyEdge> keyEdges; ///< A set of non-searchable key/values to be indexed 
+  std::vector< std::vector<KeyEdge> > keyEdges; ///< A set of non-searchable key/values to be indexed 
   std::map<std::string, uint64_t> tmpEdges; ///< A set of searchable key/values to be indexed
 
-  std::vector< std::vector<FujimapBlock> > fbs; ///< Succinct Associative Arrays
+  std::vector< std::vector<FujimapBlock> > fbs; ///< BitArrays
 
-  uint64_t seed; ///< Seed for hash
+  uint64_t seed; ///< A seed for hash
   uint64_t fpWidth; ///< A false positive rate (prob. of false psoitive is 2^{-fpWidth})
   uint64_t tmpN; ///< A size of tempolary map
+  uint64_t keyBlockN; ///< A number of blocks
 };
 
 }

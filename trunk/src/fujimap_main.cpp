@@ -10,24 +10,21 @@ using namespace std;
 
 int buildFromFile(const cmdline::parser& p){
   istream *pis=&cin;
-
+  ifstream ifs;
   if (p.get<string>("dic") != "-"){
-    ifstream ifs(p.get<string>("dic").c_str());
+    ifs.open(p.get<string>("dic").c_str());
     if (!ifs){
       cerr << "Unable to open " << p.get<string>("dic") << endl;
       return -1;
     }
-    pis = &ifs;
+
+    pis = static_cast<istream*>(&ifs);
   }
+
   istream &is=*pis;
-    
   fujimap_tool::Fujimap fm;
   fm.initFP(p.get<int>("fpwidth"));
   fm.initTmpN(p.get<int>("tmpN"));
-
-  fujimap_tool::Fujimap fmlen;
-  fmlen.initFP(p.get<int>("fpwidth"));
-  fmlen.initTmpN(p.get<int>("tmpN"));
 
   string line;
   while (getline(is, line)){
@@ -40,18 +37,16 @@ int buildFromFile(const cmdline::parser& p){
     uint64_t val = strtoll(line.substr(p+1).c_str(), NULL, 10);
     string   key = line.substr(0, p);
     fm.setIntegerTemporary(key, val);
-    uint64_t len = fujimap_tool::FujimapBlock::log2(val);
-    fmlen.setIntegerTemporary(key, len); 
   }
   cerr << "keyNum:" << fm.getKeyNum() << endl;
 
-  int ret = fmlen.build(); 
+  int ret = fm.build(); 
   if (ret == -1){
     return -1;
   }
   cerr << "build done." << endl;
 
-  if (fmlen.save(p.get<string>("index").c_str()) == -1){
+  if (fm.save(p.get<string>("index").c_str()) == -1){
     cerr << fm.what() << endl;
     return -1;
   }
@@ -97,16 +92,19 @@ int main(int argc, char* argv[]){
 
     string key;
     for (;;){
-      cout << ">";
-      cout.flush();
+      cout << ">" << flush;
       if (!getline(cin, key)){
 	break;
       }
 
       string val = fm.getString(key);
-      cout << "val:" << val << endl;
-      uint32_t code = fm.getInteger(key);
-      cout << "code:" << code << endl;
+      cout << "sval:" << val << endl;
+      uint64_t code = fm.getInteger(key);
+      if (code == fujimap_tool::NOTFOUND){
+	cout << "notfound" << endl;
+      } else {
+	cout << "code:" << code << endl;
+      }
     }
   }
 
