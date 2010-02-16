@@ -3,6 +3,7 @@
 #include <fstream>
 #include <cassert>
 #include <map>
+#include <cstring>
 #include "fujimap.hpp"
 
 using namespace std;
@@ -11,7 +12,7 @@ using namespace std;
 #include <sys/time.h>
 #include <stdio.h>
 
-static int N = 1000000;
+static uint64_t N = 100000000;
 
 double gettimeofday_sec()
 {
@@ -27,18 +28,18 @@ void run_fujimap(){
 
   char buf[100];
   double t1 = gettimeofday_sec();
-  for (int i = 0; i < N; ++i){
-    snprintf(buf, 100, "%d", i);
-    fm.setIntegerTemporary(string(buf), i);
+  for (uint64_t i = 0; i < N; ++i){
+    snprintf(buf, 100, "%llu", (unsigned long long int)i);
+    fm.setInteger(buf, strlen(buf), i, false);
   }
   fm.build();
   double t2 = gettimeofday_sec();
   fprintf(stderr, "%f (%f)\n", t2 - t1, (t2 - t1) / N);
 
   int dummy = 0;
-  for (int i = 0; i < N; ++i){
-    snprintf(buf, 100, "%d", i);
-    dummy += fm.getInteger(string(buf));
+  for (uint64_t i = 0; i < N; ++i){
+    snprintf(buf, 100, "%llu", (unsigned long long int)i);
+    dummy += fm.getInteger(buf, strlen(buf));
   }
   double t3 = gettimeofday_sec();
   fprintf(stderr, "%f (%f)\n", t3 - t2, (t3 - t2) / N);
@@ -54,16 +55,16 @@ void run_map(){
 
   char buf[100];
   double t1 = gettimeofday_sec();
-  for (int i = 0; i < N; ++i){
-    snprintf(buf, 100, "%d", i);
+  for (uint64_t i = 0; i < N; ++i){
+    snprintf(buf, 100, "%llu", (unsigned long long int)i);
     m[string(buf)] = i;
   }
   double t2 = gettimeofday_sec();
   fprintf(stderr, "%f (%f)\n", t2 - t1, (t2 - t1) / N);
 
   int dummy = 0;
-  for (int i = 0; i < N; ++i){
-    snprintf(buf, 100, "%d", i);
+  for (uint64_t i = 0; i < N; ++i){
+    snprintf(buf, 100, "%llu", (unsigned long long int)i);
     dummy += m[string(buf)];
   }
   double t3 = gettimeofday_sec();

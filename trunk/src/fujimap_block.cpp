@@ -46,14 +46,16 @@ FujimapBlock::FujimapBlock() :
 FujimapBlock::~FujimapBlock(){
 }
 
-uint64_t FujimapBlock::getVal(const string& key) const{
-  return getVal(KeyEdge(key, 0, seed));
+
+size_t FujimapBlock::getBSize() const{
+    return B.bvSize();
 }
 
 uint64_t FujimapBlock::getVal(const KeyEdge& ke) const{
   if (B.bvSize() == 0){
     return NOTFOUND;
   }
+
   uint64_t codeLen = fpWidth + codeWidth;
   uint64_t bits = 0;
   for (uint64_t i = 0; i < R; ++i){
@@ -84,8 +86,34 @@ uint64_t FujimapBlock::log2(uint64_t x){
 }
 
 
+uint64_t FujimapBlock::getSeed() const{
+  return seed;
+}
 
-int FujimapBlock::build_(vector<KeyEdge>& keyEdges){
+
+int FujimapBlock::build(vector<KeyEdge>& keyEdges,
+			const uint64_t seed_, const uint64_t fpWidth_){
+  seed     = seed_;
+  keyNum   = static_cast<uint64_t>(keyEdges.size());
+  fpWidth  = fpWidth_;
+
+  codeNum   = 0;
+  for (size_t i = 0; i < keyEdges.size(); ++i){
+    if (keyEdges[i].code >= codeNum){
+      codeNum = keyEdges[i].code + 1;
+    }
+  }
+  codeWidth = log2(codeNum);
+  bn        = (uint64_t)(keyNum * C_R / (double)R + 100);
+
+  /*
+  cerr << " keyNum:" << keyNum << endl
+       << "codeNum:" << codeNum << endl
+       << "codeWid:" << codeWidth << endl
+       << "     bn:" << bn << endl
+       << "fpWidth:" << fpWidth << endl;
+  */
+
   // set keyEdge
   const uint64_t codeLen = codeWidth + fpWidth;
   assert(codeLen <= 63);
@@ -169,14 +197,15 @@ int FujimapBlock::build_(vector<KeyEdge>& keyEdges){
   }
 
   if (deletedNum != keyNum){
+    /*
     cerr << "assignment error deletedNum:" << deletedNum <<
       "keyNum:" << keyNum << " seed:" << seed << endl;
+    */
     return -1;
   }
   assert(q.empty());
 
   B.resize(bn * codeLen * R);
-
 
   BitVec visitedVerticies(bn * R);
   reverse(extractedEdges.begin(), extractedEdges.end());
@@ -204,42 +233,6 @@ int FujimapBlock::build_(vector<KeyEdge>& keyEdges){
   }
 
   return 0;
-}
-
-
-int FujimapBlock::build(vector<KeyEdge>& keyEdges,
-			const uint64_t seed_, const uint64_t fpWidth_){
-  seed     = seed_;
-  keyNum   = static_cast<uint64_t>(keyEdges.size());
-  fpWidth  = fpWidth_;
-
-  codeNum   = 0;
-  for (size_t i = 0; i < keyEdges.size(); ++i){
-    if (keyEdges[i].code >= codeNum){
-      codeNum = keyEdges[i].code + 1;
-    }
-  }
-  codeWidth = log2(codeNum);
-  bn        = (uint64_t)(keyNum * C_R / (double)R + 100);
-
-  /*
-  cerr << " keyNum:" << keyNum << endl
-       << "codeNum:" << codeNum << endl
-       << "codeWid:" << codeWidth << endl
-       << "     bn:" << bn << endl
-       << "fpWidth:" << fpWidth << endl;
-  */
-
-  bool succeeded = false;
-  for (int iter = 0; iter < 20; ++iter){
-    if (build_(keyEdges) == 0){
-      succeeded = true;
-      break;
-    }
-    seed++;
-  }
-  if (succeeded) return 0;
-  else return -1;
 }
 
 size_t FujimapBlock::getKeyNum() const {
