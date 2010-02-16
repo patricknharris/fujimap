@@ -31,9 +31,9 @@
 
 namespace fujimap_tool{
   static const uint32_t R = 3;        ///< Hash Num in fujimap_block
-  static const uint32_t FPWIDTH = 10; ///< Default width of false positive bit
+  static const uint32_t FPWIDTH = 0; ///< Default width of false positive bit
   static const uint32_t TMPN = 1000000; ///< Default size of temporary associative array
-  static const uint32_t KEYBLOCK = 128;  ///< # of minimum perfect hash function in fujimap_block
+  static const uint32_t KEYBLOCK = 1024;  ///< # of minimum perfect hash function in fujimap_block
   static const uint32_t NOTFOUND = 0xFFFFFFFF; ///< Indicate that key is not found
 }
 

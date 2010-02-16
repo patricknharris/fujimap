@@ -16,9 +16,14 @@ namespace fujimap_tool{
  * Intermediated representation of key/value
  * used in HashMap. 
  */
+
+uint64_t hash(const char* str, size_t len);
+void hash(const char* str, const size_t len, const uint64_t seed,  
+		 uint64_t& a, uint64_t& b, uint64_t& c);
+
 struct KeyEdge{
   KeyEdge(); 
-  KeyEdge(const std::string& str, const uint64_t code,
+  KeyEdge(const char* str, const size_t len, const uint64_t code,
 	  const uint64_t seed); 
 
   uint64_t get(uint64_t i, uint64_t bn) const{

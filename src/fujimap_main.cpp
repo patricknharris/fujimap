@@ -8,7 +8,7 @@
 
 using namespace std;
 
-int buildFromFile(const cmdline::parser& p){
+int buildFromFile(cmdline::parser& p){
   istream *pis=&cin;
   ifstream ifs;
   if (p.get<string>("dic") != "-"){
@@ -23,8 +23,15 @@ int buildFromFile(const cmdline::parser& p){
 
   istream &is=*pis;
   fujimap_tool::Fujimap fm;
-  fm.initFP(p.get<int>("fpwidth"));
-  fm.initTmpN(p.get<int>("tmpN"));
+  uint64_t fpWidth = 0;
+  if (p.exist("fpwidth")){
+    fm.initFP(p.get<int>("fpwidth"));
+    fpWidth = p.get<int>("fpwidth");
+  }
+  
+  if (p.exist("tmpN")){
+    fm.initTmpN(p.get<int>("tmpN"));
+  }
 
   string line;
   while (getline(is, line)){
@@ -35,10 +42,11 @@ int buildFromFile(const cmdline::parser& p){
     }
     if (p == 0 || p+1 == line.size()) continue; // no key or no value
     uint64_t val = strtoll(line.substr(p+1).c_str(), NULL, 10);
-    string   key = line.substr(0, p);
-    fm.setIntegerTemporary(key, val);
+    fm.setInteger(line.c_str(), p, val, false);
   }
-  cerr << "keyNum:" << fm.getKeyNum() << endl;
+  cerr << "keyNum:" << fm.getKeyNum() << endl
+       << "fpWidth:" << fpWidth << endl;
+
 
   int ret = fm.build(); 
   if (ret == -1){
@@ -58,10 +66,10 @@ int buildFromFile(const cmdline::parser& p){
 
 int main(int argc, char* argv[]){
   cmdline::parser p;
-  p.add<string>("dic", 'd', "dictionary file. when \"-\" is specificed it reads from stdin", false, "");
+  p.add<string>("dic", 'd', "dictionary file. when \"-\" is specificed it reads from stdin", false);
   p.add<string>("index", 'i', "index", true, "");
-  p.add<int>("fpwidth", 'f', "false positive rate 2^{-f} (0 <= f < 31) ", false, 0);
-  p.add<int>("tmpN", 't', "temporarySize", false, 1000000);
+  p.add<int>("fpwidth", 'f', "false positive rate 2^{-f} (0 <= f < 31) ", false);
+  p.add<int>("tmpN", 't', "temporarySize", false);
   p.add("help", 'h', "print this message");
   p.set_progam_name("fujimap");
   
@@ -97,9 +105,12 @@ int main(int argc, char* argv[]){
 	break;
       }
 
-      string val = fm.getString(key);
-      cout << "sval:" << val << endl;
-      uint64_t code = fm.getInteger(key);
+      size_t len = 0;
+      const char* sval = fm.getString(key.c_str(), key.size(), len);
+      if (sval != NULL){
+	cout << "sval:" << sval << endl;
+      }
+      uint64_t code = fm.getInteger(key.c_str(), key.size());
       if (code == fujimap_tool::NOTFOUND){
 	cout << "notfound" << endl;
       } else {

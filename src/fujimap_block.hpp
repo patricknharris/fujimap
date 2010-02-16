@@ -49,19 +49,18 @@ public:
 
   int build(std::vector<KeyEdge>& keyEdges,
 	    const uint64_t seed, const uint64_t fpWidth); ///< build an associative map
-  uint64_t getVal(const std::string& key) const; ///< return a value corresponding to the given key
   uint64_t getVal(const KeyEdge& ke) const; ///< return a value corresponding to the given KeyEdge
   void save(std::ofstream& ofs); ///< save the status in ofs
   void load(std::ifstream& ifs); ///< load the status from ifs
 
-  size_t getKeyNum() const; ///<return the number of registered keys
+  uint64_t getSeed() const;
 
+  size_t getKeyNum() const; ///<return the number of registered keys
   static uint64_t log2(uint64_t x);
 
-private:
-  int build_(std::vector<KeyEdge>& keyEdges);
+  size_t getBSize() const;
 
-  
+private:
   void test();
 
   BitVec B;

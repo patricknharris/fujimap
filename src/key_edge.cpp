@@ -17,7 +17,7 @@ namespace fujimap_tool{
   c -= a; c -= b; c ^= (b >> 15);
 */
 
-  /*
+
 #define bob_mix(a, b, c) \
     a -= b; a -= c; a ^= (c>>43); \
     b -= c; b -= a; b ^= (a<<9); \
@@ -31,23 +31,62 @@ namespace fujimap_tool{
     a -= b; a -= c; a ^= (c>>12); \
     b -= c; b -= a; b ^= (a<<18); \
     c -= a; c -= b; c ^= (b>>22); 
-  */
 
+  /*
 #define bob_mix(a, b, c) \
     a -= b; a -= c; a ^= (c>>43); \
     b -= c; b -= a; b ^= (a<<9); \
     c -= a; c -= b; c ^= (b>>8); 
-
+  */
 uint64_t get64bit(const uint8_t* v) {
   return (uint64_t)v[0] | ((uint64_t)v[1] << 8) | ((uint64_t)v[2] << 16) | ((uint64_t)v[3] << 24) | 
     ((uint64_t)v[4] << 32) | ((uint64_t)v[5] << 40) | ((uint64_t)v[6] << 48) | ((uint64_t)v[7] << 56);
 }
 
-void hash(const string& str, const uint64_t seed,  
-	  uint64_t& a, uint64_t& b, uint64_t& c){
-  const uint8_t* p = reinterpret_cast<const uint8_t*>(str.c_str());
-  size_t len = str.size();
+uint64_t hash (const char* data_, size_t len)
+{
+  const uint8_t* data = (const uint8_t*)data_;
+  const uint64_t m = 0xc6a4a7935bd1e995;
+  const int r = 47;
+  
+  uint64_t h = len * m;
+  
+  while (len >= 8){
+    uint64_t k = get64bit(data);
+    
+    k *= m; 
+    k ^= k >> r; 
+    k *= m; 
+    
+    h ^= k;
+    h *= m; 
+    data += 8;
+    len -= 8;
+  }
+  
+  switch(len & 7)
+    {
+    case 7: h ^= uint64_t(data[6]) << 48;
+    case 6: h ^= uint64_t(data[5]) << 40;
+    case 5: h ^= uint64_t(data[4]) << 32;
+    case 4: h ^= uint64_t(data[3]) << 24;
+    case 3: h ^= uint64_t(data[2]) << 16;
+    case 2: h ^= uint64_t(data[1]) << 8;
+    case 1: h ^= uint64_t(data[0]);
+      h *= m;
+    };
+  
+  h ^= h >> r;
+  h *= m;
+  h ^= h >> r;
+  
+  return h;
+} 
 
+
+void hash(const char* str, size_t len, uint64_t seed,  
+	  uint64_t& a, uint64_t& b, uint64_t& c){
+  const uint8_t* p = (const uint8_t*)(str);
   a = 0x9e3779b97f4a7c13LL;
   b = seed;
   c = seed;
@@ -60,7 +99,7 @@ void hash(const string& str, const uint64_t seed,
     len -= 24;
   }
 
-  c += static_cast<uint64_t>(str.size());
+  c += static_cast<uint64_t>(len);
   switch(len)
     /* all the case statements fall through */
     {
@@ -95,9 +134,9 @@ void hash(const string& str, const uint64_t seed,
 }
 
 
-KeyEdge::KeyEdge(const string& str, const uint64_t code, 
-		 const uint64_t seed) : code(code){
-  hash(str, seed, v[0], v[1], v[2]);
+KeyEdge::KeyEdge(const char* str, const size_t len,
+		   const uint64_t code, const uint64_t seed) : code(code){
+  hash(str, len, seed, v[0], v[1], v[2]);
 }
 
 KeyEdge::KeyEdge() :  code(0){

@@ -1,4 +1,4 @@
-VERSION= '0.0.3'
+VERSION= '0.0.4'
 APPNAME= 'fujimap'
 
 srcdir= '.'
@@ -12,7 +12,7 @@ def configure(ctx):
 
 def build(bld):
   task1= bld(features='cxx cstaticlib',
-       source       = 'fujimap.cpp fujimap_block.cpp bitvec.cpp key_edge.cpp',
+       source       = 'fujimap.cpp fujimap_block.cpp bitvec.cpp key_edge.cpp key_file.cpp',
        name         = 'fujimap',
        cxxflags     = ['-O2', '-Wall', '-g'],
        target       = 'fujimap',
@@ -34,10 +34,15 @@ def build(bld):
        cxxflags     = ['-O2', '-Wall'],
        target       ='bitvec_test',
        includes     = '.'),
-  task3= bld(features='cxx cprogram',
+  task5= bld(features='cxx cprogram',
        source       = 'fujimap_performancetest.cpp',
        cxxflags     = ['-O2', '-Wall'],
        target       ='fujimap_performancetest',
        includes     = '.',
-       uselib_local = 'fujimap')
+       uselib_local = 'fujimap'),
+  task5= bld(features='cxx cprogram',
+       source       = 'key_file.cpp key_file_test.cpp',
+       cxxflags     = ['-O2', '-Wall'],
+       target       ='ke_file_test',
+       includes     = '.')
   bld.install_files('${PREFIX}/include', 'fujimap.hpp')
