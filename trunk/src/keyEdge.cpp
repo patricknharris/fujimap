@@ -30,44 +30,13 @@ using namespace std;
 
 namespace fujimap_tool{
 
-  /*
-#define bob_mix(a, b, c) \
-  a -= b; a -= c; a ^= (c >> 13);      \
-  b -= c; b -= a; b ^= (a << 8);        \
-  c -= a; c -= b; c ^= (b >> 13);       \
-  a -= b; a -= c; a ^= (c >> 12);       \
-  b -= c; b -= a; b ^= (a << 16);       \
-  c -= a; c -= b; c ^= (b >> 5);        \
-  a -= b; a -= c; a ^= (c >> 3);        \
-  b -= c; b -= a; b ^= (a << 10);       \
-  c -= a; c -= b; c ^= (b >> 15);
-*/
-
-
-#define bob_mix(a, b, c) \
-    a -= b; a -= c; a ^= (c>>43); \
-    b -= c; b -= a; b ^= (a<<9); \
-    c -= a; c -= b; c ^= (b>>8); \
-    a -= b; a -= c; a ^= (c>>38); \
-    b -= c; b -= a; b ^= (a<<23); \
-    c -= a; c -= b; c ^= (b>>5); \
-    a -= b; a -= c; a ^= (c>>35); \
-    b -= c; b -= a; b ^= (a<<49); \
-    c -= a; c -= b; c ^= (b>>11); \
-    a -= b; a -= c; a ^= (c>>12); \
-    b -= c; b -= a; b ^= (a<<18); \
-    c -= a; c -= b; c ^= (b>>22); 
-
-  /*
-#define bob_mix(a, b, c) \
-    a -= b; a -= c; a ^= (c>>43); \
-    b -= c; b -= a; b ^= (a<<9); \
-    c -= a; c -= b; c ^= (b>>8); 
-  */
 uint64_t get64bit(const uint8_t* v) {
   return (uint64_t)v[0] | ((uint64_t)v[1] << 8) | ((uint64_t)v[2] << 16) | ((uint64_t)v[3] << 24) | 
     ((uint64_t)v[4] << 32) | ((uint64_t)v[5] << 40) | ((uint64_t)v[6] << 48) | ((uint64_t)v[7] << 56);
 }
+
+// MurmurHash 2.0
+// http://murmurhash.googlepages.com/
 
 uint64_t hash (const char* data_, size_t len)
 {
@@ -109,6 +78,43 @@ uint64_t hash (const char* data_, size_t len)
   return h;
 } 
 
+// Bob Jenkins's Hash
+// http://burtleburtle.net/bob/hash/doobs.html
+
+  /*
+#define bob_mix(a, b, c) \
+  a -= b; a -= c; a ^= (c >> 13);      \
+  b -= c; b -= a; b ^= (a << 8);        \
+  c -= a; c -= b; c ^= (b >> 13);       \
+  a -= b; a -= c; a ^= (c >> 12);       \
+  b -= c; b -= a; b ^= (a << 16);       \
+  c -= a; c -= b; c ^= (b >> 5);        \
+  a -= b; a -= c; a ^= (c >> 3);        \
+  b -= c; b -= a; b ^= (a << 10);       \
+  c -= a; c -= b; c ^= (b >> 15);
+*/
+
+
+#define bob_mix(a, b, c) \
+    a -= b; a -= c; a ^= (c>>43); \
+    b -= c; b -= a; b ^= (a<<9); \
+    c -= a; c -= b; c ^= (b>>8); \
+    a -= b; a -= c; a ^= (c>>38); \
+    b -= c; b -= a; b ^= (a<<23); \
+    c -= a; c -= b; c ^= (b>>5); \
+    a -= b; a -= c; a ^= (c>>35); \
+    b -= c; b -= a; b ^= (a<<49); \
+    c -= a; c -= b; c ^= (b>>11); \
+    a -= b; a -= c; a ^= (c>>12); \
+    b -= c; b -= a; b ^= (a<<18); \
+    c -= a; c -= b; c ^= (b>>22); 
+
+  /*
+#define bob_mix(a, b, c) \
+    a -= b; a -= c; a ^= (c>>43); \
+    b -= c; b -= a; b ^= (a<<9); \
+    c -= a; c -= b; c ^= (b>>8); 
+  */
 
 void hash(const char* str, size_t len, uint64_t seed,  
 	  uint64_t& a, uint64_t& b, uint64_t& c){
