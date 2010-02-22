@@ -69,6 +69,7 @@ private:
   BitVec B_;
 
   uint64_t keyNum_;
+  uint64_t minCodeVal_;
   uint64_t maxCodeVal_;
   uint64_t maxCodeLen_;
   uint64_t fpLen_;

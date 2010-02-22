@@ -108,41 +108,41 @@ uint32_t BitVec::select(const size_t ind) const {
 */
 
 void BitVec::resize(const size_t size){
-  bv_.resize((size + 64-1)/64);
+  bv_.resize((size + BITNUM -1)/ BITNUM);
   fill(bv_.begin(), bv_.end(), 0);
 }
 
 uint64_t BitVec::getBit(const size_t pos) const{
-  return (bv_[(pos/64) % bv_.size()] >> (pos%64)) & 1LLU;
+  return (bv_[(pos/BITNUM) % bv_.size()] >> (pos%BITNUM)) & 1LLU;
 }
 
 uint64_t BitVec::getBits(const size_t pos, const size_t len) const {
-  assert(len <= 64);
-  uint64_t blockInd1    = pos / 64;
-  uint64_t blockOffset1 = pos % 64;
-  if (blockOffset1 + len <= 64){
+  assert(len <= BITNUM);
+  uint64_t blockInd1    = pos / BITNUM;
+  uint64_t blockOffset1 = pos % BITNUM;
+  if (blockOffset1 + len <= BITNUM){
     return mask(bv_[blockInd1] >> blockOffset1, len);
   } else {
-    uint64_t blockInd2    = ((pos + len - 1) / 64) % bv_.size();
-    return  mask((bv_[blockInd1] >> blockOffset1) + (bv_[blockInd2] << (64 - blockOffset1)), len);
+    uint64_t blockInd2    = ((pos + len - 1) / BITNUM) % bv_.size();
+    return  mask((bv_[blockInd1] >> blockOffset1) + (bv_[blockInd2] << (BITNUM - blockOffset1)), len);
   }
 }
 
 void BitVec::setBit(const size_t pos) {
-  bv_[(pos/64) % bv_.size()] |= (1LLU << (pos % 64));
+  bv_[(pos/BITNUM) % bv_.size()] |= (1LLU << (pos % BITNUM));
 }
 
 void BitVec::setBits(const size_t pos, const size_t len, const uint64_t bits){
-  assert((pos + len - 1) / 64 < bv_.size());
-  uint64_t blockInd1    = pos / 64;
-  uint64_t blockOffset1 = pos % 64;
-  if (blockOffset1 + len <= 64){
+  assert((pos + len - 1) / BITNUM < bv_.size());
+  uint64_t blockInd1    = pos / BITNUM;
+  uint64_t blockOffset1 = pos % BITNUM;
+  if (blockOffset1 + len <= BITNUM){
     bv_[blockInd1] = (bv_[blockInd1] & (~(((1LLU << len) - 1) << blockOffset1))) |
       bits << blockOffset1;
   } else {
-    uint64_t blockOffset2 = (pos + len) % 64;
+    uint64_t blockOffset2 = (pos + len) % BITNUM;
     bv_[blockInd1] = mask(bv_[blockInd1], blockOffset1) | (bits << blockOffset1);
-    bv_[blockInd1+1] = (bv_[blockInd1+1] & (~((1LLU << blockOffset2) - 1))) | (bits >> (64 - blockOffset1));
+    bv_[blockInd1+1] = (bv_[blockInd1+1] & (~((1LLU << blockOffset2) - 1))) | (bits >> (BITNUM - blockOffset1));
   }
 }
 
