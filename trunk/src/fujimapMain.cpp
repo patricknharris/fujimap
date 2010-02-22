@@ -126,7 +126,7 @@ int main(int argc, char* argv[]){
   p.add        ("logvalue",    'l', "When specified, store a log of input value");
   p.add        ("stringvalue", 's', "When specified, sotre a string of input value");
   p.add("help", 'h', "print this message");
-  p.set_progam_name("fujimap");
+  p.set_program_name("fujimap");
   
   bool parseOK = p.parse(argc, argv);
   if (argc == 1 || p.exist("help")){
