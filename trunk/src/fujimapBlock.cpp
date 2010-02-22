@@ -39,7 +39,7 @@ const uint64_t FujimapBlock::intercept = 10;
 
 
 FujimapBlock::FujimapBlock() : 
-  keyNum_(0), maxCodeVal_(0), maxCodeLen_(0), fpLen_(FPLEN), seed_(0x12345678), 
+  keyNum_(0), minCodeVal_(0), maxCodeVal_(0), maxCodeLen_(0), fpLen_(FPLEN), seed_(0x12345678), 
   bn_(0), et_(BINARY){
 }
 
@@ -57,12 +57,9 @@ uint64_t FujimapBlock::getVal(const KeyEdge& ke) const{
   }
 
   uint64_t blockSize = (et_ == BINARY) ? (maxCodeLen_ + fpLen_) : 1;
-  // read fpLen_
   if (fpLen_ != 0){
     uint64_t fpCheck = 0;
     for (uint64_t i = 0; i < R; ++i){
-      //cerr << "bn_:" << bn_ << " blockSize:" << blockSize << endl;
-      //cerr << "or:" << ke.get(i, bn_) << " getB_its:" << ke.get(i, bn_) * blockSize << " len:" << fpLen_ << endl;
       fpCheck ^= B_.getBits(ke.get(i, bn_) * blockSize, fpLen_);
     }
     if (fpCheck != mask(ke.v[0] ^ ke.v[1], fpLen_)){
@@ -73,8 +70,6 @@ uint64_t FujimapBlock::getVal(const KeyEdge& ke) const{
   uint64_t code = 0;
   for (uint64_t i = 0; i < R; ++i){
     code ^= B_.getBits(ke.get(i, bn_) * blockSize + fpLen_, maxCodeLen_);
-    //cerr << "bn_:" << bn_ << " blockSize:" << blockSize << endl;
-    //cerr << "getBits:" << ke.get(i, bn_) * blockSize + fpLen_ << " len:" << maxCodeLen_ << endl;
   }
 
   if (et_ == GAMMA){
@@ -85,7 +80,7 @@ uint64_t FujimapBlock::getVal(const KeyEdge& ke) const{
     return NOTFOUND;
   }
 
-  return code;
+  return code + minCodeVal_;
 }
 
 
@@ -102,11 +97,19 @@ int FujimapBlock::build(vector<KeyEdge>& keyEdges,
   fpLen_    = fpLen;
   et_       = et;
 
+  minCodeVal_ = 0xFFFFFFFFFFFFFFFFLLU;
   maxCodeVal_ = 0;
   for (size_t i = 0; i < keyEdges.size(); ++i){
     if (keyEdges[i].code > maxCodeVal_){
       maxCodeVal_ = keyEdges[i].code;
     }
+    if (keyEdges[i].code < minCodeVal_){
+      minCodeVal_ = keyEdges[i].code;
+    }
+  }
+
+  for (size_t i = 0; i < keyEdges.size(); ++i){
+    keyEdges[i].code -= minCodeVal_;
   }
 
   uint64_t totalCodeLen = 0;
@@ -269,14 +272,10 @@ int FujimapBlock::build(vector<KeyEdge>& keyEdges,
       if (!(visitedVerticies.getBit(t+offset_))){
 	continue;
       }
-      //cerr <<  B_.getBits(t * blockSize + offset_, writeCodeLen) << endl;
       bits ^= B_.getBits(t * blockSize + offset_, writeCodeLen);
     }
     
     const uint64_t set_Pos = ke.get(it->second, bn_);
-    //cerr << "bn_:" << bn_ << endl;
-    //cerr << "set_Pos:" << set_Pos << " setBits:" << set_Pos * blockSize + offset_ << " len:" << writeCodeLen << endl;
-    //printBit(bits, writeCodeLen);
     B_.setBits(set_Pos * blockSize + offset_, writeCodeLen, bits);
     visitedVerticies.setBit(set_Pos + offset_);
   }
@@ -290,11 +289,12 @@ size_t FujimapBlock::getKeyNum() const {
 }
 
 size_t FujimapBlock::getWorkingSize() const {
-  return B_.bvSize() * 64;
+  return B_.bvSize() * BITNUM;
 }
 
 void FujimapBlock::save(ofstream& ofs){
   ofs.write((const char*)(&keyNum_),     sizeof(keyNum_));
+  ofs.write((const char*)(&minCodeVal_), sizeof(minCodeVal_));
   ofs.write((const char*)(&maxCodeVal_), sizeof(maxCodeVal_));
   ofs.write((const char*)(&maxCodeLen_), sizeof(maxCodeLen_));
   ofs.write((const char*)(&fpLen_),      sizeof(fpLen_));
@@ -307,6 +307,7 @@ void FujimapBlock::save(ofstream& ofs){
 
 void FujimapBlock::load(ifstream& ifs){
   ifs.read((char*)(&keyNum_),     sizeof(keyNum_));
+  ifs.read((char*)(&minCodeVal_), sizeof(minCodeVal_));
   ifs.read((char*)(&maxCodeVal_), sizeof(maxCodeVal_));
   ifs.read((char*)(&maxCodeLen_), sizeof(maxCodeLen_));
   ifs.read((char*)(&fpLen_),      sizeof(fpLen_));
