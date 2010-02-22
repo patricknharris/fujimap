@@ -59,6 +59,7 @@ public:
 
   size_t getKeyNum() const; ///<return the number of registered keys
   size_t getBSize() const;
+  size_t getWorkingSize() const; ///<return the current working size
 
 private:
   void test();

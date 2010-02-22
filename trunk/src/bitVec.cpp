@@ -25,7 +25,6 @@
  */
 
 #include <algorithm>
-#include <iostream>
 #include <cassert>
 #include "bitVec.hpp"
 #include "fujimapCommon.hpp"

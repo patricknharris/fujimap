@@ -25,7 +25,6 @@
  */
 
 #include <algorithm>
-#include <iostream>
 #include <fstream>
 #include <cassert>
 #include "fujimap.hpp"
@@ -182,6 +181,17 @@ size_t Fujimap::getKeyNum() const{
   return keyNum;
 }
 
+size_t Fujimap::getWorkingSize() const {
+  size_t workingSize = 0;
+  for (size_t i = 0; i < fbs_.size(); ++i){
+    for (size_t j = 0; j < fbs_[i].size(); ++j){
+      workingSize += fbs_[i][j].getWorkingSize();
+    }
+  }
+
+  return workingSize;
+}
+
 uint64_t Fujimap::getFpLen() const {
   return fpLen_;
 }
@@ -199,10 +209,6 @@ string Fujimap::getEncodeTypeStr() const {
     return string("undefined");
   }
 }
-
-
-
-
 
 const char* Fujimap::getString(const char* kbuf, const size_t klen, size_t& vlen) const {
   uint64_t ret = getInteger(kbuf, klen);

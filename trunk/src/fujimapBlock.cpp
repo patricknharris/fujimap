@@ -27,7 +27,6 @@
 #include <fstream>
 #include <queue>
 #include <cassert>
-#include <iostream>
 #include <algorithm>
 #include "fujimapBlock.hpp"
 
@@ -66,8 +65,6 @@ uint64_t FujimapBlock::getVal(const KeyEdge& ke) const{
       //cerr << "or:" << ke.get(i, bn_) << " getB_its:" << ke.get(i, bn_) * blockSize << " len:" << fpLen_ << endl;
       fpCheck ^= B_.getBits(ke.get(i, bn_) * blockSize, fpLen_);
     }
-    printBit(fpCheck, fpLen_);
-    printBit(mask(ke.v[0] ^ ke.v[1], fpLen_), fpLen_);
     if (fpCheck != mask(ke.v[0] ^ ke.v[1], fpLen_)){
       return NOTFOUND;
     }
@@ -290,6 +287,10 @@ int FujimapBlock::build(vector<KeyEdge>& keyEdges,
 
 size_t FujimapBlock::getKeyNum() const {
   return keyNum_;
+}
+
+size_t FujimapBlock::getWorkingSize() const {
+  return B_.bvSize() * 64;
 }
 
 void FujimapBlock::save(ofstream& ofs){
