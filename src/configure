@@ -79,7 +79,7 @@ generateMakefile()
 WAF_HOME=$CUR_DIR
 
 all:
-#@$WAF build
+	@$WAF build
 
 all-debug:
 	@$WAF -v build
@@ -88,7 +88,7 @@ all-progress:
 	@$WAF -p build
 
 install:
-	$WAF install --yes;
+	$WAF install
 
 uninstall:
 	$WAF uninstall
