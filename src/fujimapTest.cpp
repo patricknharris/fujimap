@@ -110,7 +110,7 @@ int main(int argc, char* argv[]){
   p.add<string>("index", 'i', "index", true, "");
   p.add<string>("encode", 'e', "Code encoding  (=binary, gamma)", "binary");
   p.add("help", 'h', "print this message");
-  p.set_progam_name("fujimap_test");
+  p.set_program_name("fujimap_test");
   
   bool parseOK = p.parse(argc, argv);
   if (argc == 1 || p.exist("help")){
