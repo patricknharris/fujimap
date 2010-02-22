@@ -1,6 +1,6 @@
 #include <iostream>
 #include <cassert>
-#include "key_file.hpp"
+#include "keyFile.hpp"
 
 using namespace std;
 using namespace fujimap_tool;

@@ -30,37 +30,45 @@
 #include <cassert>
 #include "fujimap.hpp"
 
-
 using namespace std;
 
 namespace fujimap_tool{
 
-Fujimap::Fujimap() :  seed(0x123456), fpWidth(FPWIDTH), tmpN(TMPN), keyBlockN(KEYBLOCK) {
-  kf.initMaxID(keyBlockN);
+Fujimap::Fujimap() :  seed_(0x123456), fpLen_(FPLEN), tmpN_(TMPN), 
+		      keyBlockN_(KEYBLOCK), et_(BINARY) {
+  kf_.initMaxID(keyBlockN_);
 }
 
 Fujimap::~Fujimap(){
 }
 
-void Fujimap::initSeed(const uint64_t seed_){
-  seed = seed_;
+void Fujimap::initSeed(const uint64_t seed){
+  seed_ = seed;
 }
 
-void Fujimap::initFP(const uint64_t fpWidth_){
-  fpWidth = fpWidth_;
+void Fujimap::initFP(const uint64_t fpLen){
+  fpLen_ = fpLen;
 }
 
-void Fujimap::initTmpN(const uint64_t tmpN_){
-  tmpN = tmpN_;
+void Fujimap::initTmpN(const uint64_t tmpN){
+  tmpN_ = tmpN;
 }
 
-void Fujimap::initKeyBlockN(const uint64_t keyBlockN_){
-  keyBlockN = keyBlockN_;
-  kf.initMaxID(keyBlockN);
+void Fujimap::initKeyBlockN(const uint64_t keyBlockN){
+  keyBlockN_ = keyBlockN;
+  kf_.initMaxID(keyBlockN_);
 }
 
 int Fujimap::initWorkingFile(const char* fn){
-  return kf.initWorkingFile(fn);
+  if (kf_.initWorkingFile(fn) == -1){
+    what_ << "initWorkingFile erorr: " << fn;
+    return -1;
+  }
+  return  0;
+}
+
+void Fujimap::initEncodeType(const EncodeType et){
+  et_ = et;
 }
 
 void Fujimap::setString(const char* kbuf, const size_t klen, 
@@ -72,24 +80,24 @@ void Fujimap::setString(const char* kbuf, const size_t klen,
 void Fujimap::setInteger(const char* kbuf, const size_t klen, 
 			 const uint64_t code, const bool searchable){
   if (searchable){
-    tmpEdges[string(kbuf, klen)] = code;
-    if (tmpEdges.size() == tmpN){
+    tmpEdges_[string(kbuf, klen)] = code;
+    if (tmpEdges_.size() == tmpN_){
       build();
     }
   } else {
     uint64_t id = getBlockID(kbuf, klen);
-    kf.write(id, kbuf, klen, code);
+    kf_.write(id, kbuf, klen, code);
   }
 }
 
 uint64_t Fujimap::getCode(const std::string& value){
-  map<string, uint64_t>::const_iterator it = val2code.find(value);
-  if (it != val2code.end()){
+  map<string, uint64_t>::const_iterator it = val2code_.find(value);
+  if (it != val2code_.end()){
     return it->second;
   } else {
-    uint32_t code = static_cast<uint32_t>(val2code.size());
-    val2code[value] = code;
-    code2val.push_back(value);
+    uint32_t code = static_cast<uint32_t>(val2code_.size());
+    val2code_[value] = code;
+    code2val_.push_back(value);
     return code;
   }
 }
@@ -106,21 +114,22 @@ bool kvsComp(const pair<string, uint64_t>& v1,
 
 
 uint64_t Fujimap::getBlockID(const char* kbuf, const size_t klen) const{
-  return hash(kbuf, klen) % keyBlockN;
+  return hash(kbuf, klen) % keyBlockN_;
 }
-
+  
 int Fujimap::build(){
-  for (map<string, uint64_t>::const_iterator it = tmpEdges.begin();
-       it != tmpEdges.end(); ++it){
+  for (map<string, uint64_t>::const_iterator it = tmpEdges_.begin();
+       it != tmpEdges_.end(); ++it){
     uint64_t id = getBlockID(it->first.c_str(), it->first.size());
-    kf.write(id, it->first.c_str(), it->first.size(), it->second);
+    kf_.write(id, it->first.c_str(), it->first.size(), it->second);
   }
-  tmpEdges.clear();
+  tmpEdges_.clear();
+
 
   vector<FujimapBlock> cur;
-  for (uint64_t i = 0; i < keyBlockN; ++i){
+  for (uint64_t i = 0; i < keyBlockN_; ++i){
     vector<pair<string, uint64_t> > kvs;
-    if (kf.read(i, kvs) == -1){
+    if (kf_.read(i, kvs) == -1){
       what_ << "kf read error" << endl;
       return -1;
     }
@@ -132,9 +141,8 @@ int Fujimap::build(){
 
     cur.push_back(fb);
   }
-  kf.clear();
-
-  fbs.push_back(cur);
+  kf_.clear();
+  fbs_.push_back(cur);
   return 0;
 }
 
@@ -152,34 +160,55 @@ int Fujimap::build_(vector<pair<string, uint64_t> >& kvs,
     vector<KeyEdge> keyEdges;
     for (size_t i = 0; i < kvs.size(); ++i){
       keyEdges.push_back(KeyEdge(kvs[i].first.c_str(), kvs[i].first.size(),
-				 kvs[i].second, seed));
+				 kvs[i].second, seed_));
     }
-    if (fb.build(keyEdges, seed, fpWidth) == 0){
+    if (fb.build(keyEdges, seed_, fpLen_, et_) == 0){
       break;
     }
-    seed += 777;
+    seed_ += 777;
   }
   return 0;
 }
 
 size_t Fujimap::getKeyNum() const{
-  size_t keyNum = tmpEdges.size() + kf.getNum();
+  size_t keyNum = tmpEdges_.size() + kf_.getNum();
 
-  for (size_t i = 0; i < fbs.size(); ++i){
-    for (size_t j = 0; j < fbs[i].size(); ++j){
-      keyNum += fbs[i][j].getKeyNum();
+  for (size_t i = 0; i < fbs_.size(); ++i){
+    for (size_t j = 0; j < fbs_[i].size(); ++j){
+      keyNum += fbs_[i][j].getKeyNum();
     }
   }
   
   return keyNum;
-
 }
+
+uint64_t Fujimap::getFpLen() const {
+  return fpLen_;
+}
+
+EncodeType Fujimap::getEncodeType() const {
+    return et_;
+}
+
+string Fujimap::getEncodeTypeStr() const {
+  if (et_ == BINARY){
+    return string("binary");
+  } else if (et_ == GAMMA){
+    return string("gamma"); 
+  } else {
+    return string("undefined");
+  }
+}
+
+
+
+
 
 const char* Fujimap::getString(const char* kbuf, const size_t klen, size_t& vlen) const {
   uint64_t ret = getInteger(kbuf, klen);
-  if (ret != NOTFOUND && ret < code2val.size()){
-    vlen = code2val[ret].size();
-    return code2val[ret].c_str();
+  if (ret != NOTFOUND && ret < code2val_.size()){
+    vlen = code2val_[ret].size();
+    return code2val_[ret].c_str();
   } else {
     return NULL; // NOTFOUND;
   }
@@ -187,14 +216,14 @@ const char* Fujimap::getString(const char* kbuf, const size_t klen, size_t& vlen
 
 uint64_t Fujimap::getInteger(const char* kbuf, const size_t klen) const {
   string s(kbuf, klen);
-  map<string, uint64_t>::const_iterator it = tmpEdges.find(string(kbuf, klen));
-  if (it != tmpEdges.end()){
+  map<string, uint64_t>::const_iterator it = tmpEdges_.find(string(kbuf, klen));
+  if (it != tmpEdges_.end()){
     return it->second;
   }
 
   const uint64_t id = getBlockID(kbuf, klen);
-  for (vector< vector<FujimapBlock> >::const_reverse_iterator it2 = fbs.rbegin();
-       it2 != fbs.rend(); ++it2){
+  for (vector< vector<FujimapBlock> >::const_reverse_iterator it2 = fbs_.rbegin();
+       it2 != fbs_.rend(); ++it2){
     KeyEdge ke(kbuf, klen, 0, (*it2)[id].getSeed());
     uint64_t ret = (*it2)[id].getVal(ke);
     if (ret != NOTFOUND){
@@ -214,17 +243,17 @@ int Fujimap::load(const char* index){
 
   uint64_t code2valSize = 0;
   ifs.read((char*)(&code2valSize), sizeof(code2valSize));
-  code2val.resize(code2valSize);
+  code2val_.resize(code2valSize);
   for (uint64_t i = 0; i < code2valSize; ++i){
-    loadString(code2val[i], ifs);
+    loadString(code2val_[i], ifs);
   }
-  for (size_t i = 0; i < code2val.size(); ++i){
-    val2code[code2val[i]] = i;
+  for (size_t i = 0; i < code2val_.size(); ++i){
+    val2code_[code2val_[i]] = i;
   }
 
-  ifs.read((char*)(&seed), sizeof(seed));
-  ifs.read((char*)(&fpWidth), sizeof(fpWidth));
-  ifs.read((char*)(&tmpN), sizeof(tmpN));
+  ifs.read((char*)(&seed_), sizeof(seed_));
+  ifs.read((char*)(&fpLen_), sizeof(fpLen_));
+  ifs.read((char*)(&tmpN_), sizeof(tmpN_));
 
 
   uint64_t tmpEdgeSize = 0;
@@ -235,19 +264,19 @@ int Fujimap::load(const char* index){
     loadString(s, ifs);
     uint32_t code = 0;
     ifs.read((char*)(&code), sizeof(uint32_t));
-    tmpEdges[s] = code;
+    tmpEdges_[s] = code;
   }
 
-  uint64_t fbsSize = 0;
-  ifs.read((char*)(&fbsSize), sizeof(fbsSize));
-  fbs.resize(fbsSize);
+  uint64_t fbs_Size = 0;
+  ifs.read((char*)(&fbs_Size), sizeof(fbs_Size));
+  fbs_.resize(fbs_Size);
 
-  for (size_t i = 0; i < fbs.size(); ++i){
-    uint64_t fbsInSize = 0;
-    ifs.read((char*)(&fbsInSize), sizeof(fbsInSize));
-    fbs[i].resize(fbsInSize);
-    for (size_t j = 0; j < fbs[i].size(); ++j){
-      fbs[i][j].load(ifs);
+  for (size_t i = 0; i < fbs_.size(); ++i){
+    uint64_t fbs_InSize = 0;
+    ifs.read((char*)(&fbs_InSize), sizeof(fbs_InSize));
+    fbs_[i].resize(fbs_InSize);
+    for (size_t j = 0; j < fbs_[i].size(); ++j){
+      fbs_[i][j].load(ifs);
     }
   }
 
@@ -280,31 +309,31 @@ int Fujimap::save(const char* index){
     return -1;
   }
 
-  uint64_t code2valSize = static_cast<uint64_t>(code2val.size());
+  uint64_t code2valSize = static_cast<uint64_t>(code2val_.size());
   ofs.write((const char*)(&code2valSize), sizeof(uint64_t));
   for (uint64_t i = 0; i < code2valSize; ++i){
-    saveString(code2val[i], ofs);
+    saveString(code2val_[i], ofs);
   }
 
-  ofs.write((const char*)(&seed), sizeof(seed));
-  ofs.write((const char*)(&fpWidth), sizeof(fpWidth));
-  ofs.write((const char*)(&tmpN), sizeof(tmpN));
+  ofs.write((const char*)(&seed_), sizeof(seed_));
+  ofs.write((const char*)(&fpLen_), sizeof(fpLen_));
+  ofs.write((const char*)(&tmpN_), sizeof(tmpN_));
 
-  uint64_t tmpEdgeSize = static_cast<uint64_t>(tmpEdges.size());
+  uint64_t tmpEdgeSize = static_cast<uint64_t>(tmpEdges_.size());
   ofs.write((const char*)(&tmpEdgeSize), sizeof(tmpEdgeSize));
-  for (map<string, uint64_t>::const_iterator it = tmpEdges.begin();
-       it != tmpEdges.end(); ++it){
+  for (map<string, uint64_t>::const_iterator it = tmpEdges_.begin();
+       it != tmpEdges_.end(); ++it){
     saveString(it->first, ofs);
     ofs.write((const char*)(&it->second), sizeof(it->second));
   }
 
-  uint64_t fbsSize = static_cast<uint64_t>(fbs.size());
-  ofs.write((const char*)(&fbsSize), sizeof(fbsSize));
-  for (size_t i = 0; i < fbs.size(); ++i){
-    uint64_t fbsInSize = fbs[i].size();
-    ofs.write((const char*)(&fbsInSize), sizeof(fbsInSize));
-    for (size_t j = 0; j < fbs[i].size(); ++j){
-      fbs[i][j].save(ofs);
+  uint64_t fbs_Size = static_cast<uint64_t>(fbs_.size());
+  ofs.write((const char*)(&fbs_Size), sizeof(fbs_Size));
+  for (size_t i = 0; i < fbs_.size(); ++i){
+    uint64_t fbs_InSize = fbs_[i].size();
+    ofs.write((const char*)(&fbs_InSize), sizeof(fbs_InSize));
+    for (size_t j = 0; j < fbs_[i].size(); ++j){
+      fbs_[i][j].save(ofs);
     }
   }
   

@@ -1,7 +1,8 @@
 #include <iostream>
 #include <vector>
 #include <cstdlib>
-#include "bitvec.hpp"
+#include "bitVec.hpp"
+#include "fujimapCommon.hpp"
 
 using namespace std;
 
@@ -63,7 +64,7 @@ int main(int argc, char* argv[]){
   offset = 0;
   for (int i = 0; i < 63; ++i){
     uint64_t bits = bv2.getBits(offset, i+1);
-    BitVec::printBit(bits, i+1);
+    fujimap_tool::printBit(bits, i+1);
     offset += (i+1);
   }
   cerr << "done" << endl;

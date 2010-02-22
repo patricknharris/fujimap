@@ -1,5 +1,5 @@
 /*
- * fujimap_block.hpp
+ * fujimapCommon.hpp
  * Copyright (c) 2010 Daisuke Okanohara All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person
@@ -24,55 +24,34 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef FUJIMAP_BLOCK_HPP__
-#define FUJIMAP_BLOCK_HPP__
+#ifndef FUJIMAP_COMMON_HPP__
+#define FUJIMAP_COMMON_HPP__
 
-#include <vector>
-#include <string>
-#include <fstream>
-#include "key_edge.hpp"
-#include "bitvec.hpp"
-#include "fujimap_common.hpp"
+#include <stdint.h>
 
 namespace fujimap_tool{
+  static const uint32_t R = 3;                 ///< Hash Num in fujimap_block
+  static const uint32_t FPLEN = 0;             ///< Default length of false positive check bits
+  static const uint32_t TMPN = 1000000;        ///< Default size of temporary associative array
+  static const uint32_t KEYBLOCK = 128;        ///< # of minimum perfect hash function in fujimap_block
+  static const uint32_t NOTFOUND = 0xFFFFFFFF; ///< Indicate that key is not found
 
-/*
- * Minimum Perfect Associative Array
- * used in Fujimap
- */
-class FujimapBlock{
-  static const double C_R; ///< Redundancy for bit array (>1.3)
+  enum EncodeType {
+    BINARY = 0,
+    GAMMA  = 1
+  };
 
-public:
-  FujimapBlock(); ///< Default Constructor
-  ~FujimapBlock(); ///< Default Destructor
-
-  int build(std::vector<KeyEdge>& keyEdges,
-	    const uint64_t seed, const uint64_t fpWidth); ///< build an associative map
-  uint64_t getVal(const KeyEdge& ke) const; ///< return a value corresponding to the given KeyEdge
-  void save(std::ofstream& ofs); ///< save the status in ofs
-  void load(std::ifstream& ifs); ///< load the status from ifs
-
-  uint64_t getSeed() const;
-
-  size_t getKeyNum() const; ///<return the number of registered keys
-  static uint64_t log2(uint64_t x);
-
-  size_t getBSize() const;
-
-private:
-  void test();
-
-  BitVec B;
-
-  uint64_t keyNum;
-  uint64_t codeNum;
-  uint64_t codeWidth;
-  uint64_t fpWidth;
-  uint64_t seed;
-  uint64_t bn;
-};
-
+  /**
+   * Calculate log_2(x)
+   * @param x 
+   * @return log_2(x). log_2(0) = 0
+   */
+  uint64_t log2(uint64_t x);
+  uint64_t gammaLen(uint64_t x);
+  uint64_t gammaEncodeBit(uint64_t pos, uint64_t x);
+  uint64_t gammaDecode(uint64_t x);
+  void printBit(const uint64_t v, const uint64_t len);
+  uint64_t mask(uint64_t x, uint64_t len);
 }
 
-#endif // FUJIMAP_BLOCK_HPP__
+#endif // COMMON_HPP__

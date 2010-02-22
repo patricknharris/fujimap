@@ -1,5 +1,5 @@
 /*
- * fujimap.hpp
+  * fujimap.hpp
  * Copyright (c) 2010 Daisuke Okanohara All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person
@@ -34,9 +34,9 @@
 #include <map>
 #include <stdint.h>
 #include <fstream>
-#include "fujimap_block.hpp"
-#include "key_edge.hpp"
-#include "key_file.hpp"
+#include "fujimapBlock.hpp"
+#include "keyEdge.hpp"
+#include "keyFile.hpp"
 
 namespace fujimap_tool{
 
@@ -58,33 +58,39 @@ public:
 
   /**
    * Initialize a seed for hash function
-   * @param seed_ A seed value
+   * @param seed A seed value
    */
-  void initSeed(const uint64_t seed_);
+  void initSeed(const uint64_t seed);
 
   /**
    * Initialize a false positive rate
-   * @param fpWidth_ A negative of false positive rate power (prob. of false positive rate is 2^{-fpWidth_})
+   * @param fpLen A negative of false positive rate power (prob. of false positive rate is 2^{-fpLen_})
    */
-  void initFP(const uint64_t fpWidth_); 
+  void initFP(const uint64_t fpLen); 
 
   /**
    * Initialize a size of temporary map size. A succinct and static map will be constructured after every tmpN_ key/values are added.
-   * @param tmpN_ A size of temporary map.
+   * @param tmpN A size of temporary map.
    */
-  void initTmpN(const uint64_t tmpN_);
+  void initTmpN(const uint64_t tmpN);
 
   /**
    * Initialize a number of blocks in hash. This would be log(number of key/values). 
-   * @param keyBlockN_ A number of blocks. 
+   * @param keyBlockN A number of blocks. 
    */
-  void initKeyBlockN(const uint64_t keyBlockN_);
+  void initKeyBlockN(const uint64_t keyBlockN);
 
   /**
    * Initialize a working file.
-   * @param workingFile
+   * @param fn A name of working file which stores temporary data.
    */
   int initWorkingFile(const char* fn);
+
+  /**
+   * Initialize an encode type
+   * @param et A type of encoding
+   */
+  void initEncodeType(const EncodeType et);
 
   /**
    * Set a record of key/value. 
@@ -121,8 +127,8 @@ public:
    * @param klen the length of the key.
    * @param vlen the length of the value.
    * @return the pointer to the value region of the corresponding record, or NULL  on failure. 
-   * @note Because the region of the returned value is allocated with the new[] operator, 
-   * a user should call delete[] operator after using the returned value.
+   * @note Because the pointer of the returned value is a member of fm, 
+   * a user should copy the returned value if using the returned value. 
   */
   const char* getString(const char* kbuf, const size_t klen, size_t& vlen) const;
 
@@ -161,31 +167,49 @@ public:
    */
   size_t getKeyNum() const;
 
-private:
+  /**
+   * Get the fpLen
+   * @return fpLen
+   */
+  uint64_t getFpLen() const;
 
+  /**
+   * Get the current EncodeType
+   * @return Current Encoding Type
+   */
+  EncodeType getEncodeType() const;
+
+  /**
+   * Get the current EncodeType in string
+   * @return Current Encoding Type
+   */
+  std::string getEncodeTypeStr() const;
+
+private:
   int build_(std::vector<std::pair<std::string, uint64_t> >& kvs, 
 	     FujimapBlock& fb);
-  
-  uint64_t getCode(const std::string& value); ///< Return corresponding code of a given value
+
+
   void saveString(const std::string& s, std::ofstream& ofs) const; ///< Util for save
   void loadString(std::string& s, std::ifstream& ifs) const; ///< Util for load
-
   uint64_t getBlockID(const char* kbuf, const size_t len) const;
+  uint64_t getCode(const std::string& value); ///< Return corresponding code of a given value
 
   std::ostringstream what_; ///< Store a message
 
-  std::map<std::string, uint64_t> val2code; ///< Map from value to code
-  std::vector<std::string> code2val; ///< Map from code to value
+  std::map<std::string, uint64_t> val2code_; ///< Map from value to code
+  std::vector<std::string> code2val_; ///< Map from code to value
 
-  KeyFile kf; ///< A set of non-searchable key/values
-  std::map<std::string, uint64_t> tmpEdges; ///< A set of searchable key/values to be indexed
+  KeyFile kf_; ///< A set of non-searchable key/values
+  std::map<std::string, uint64_t> tmpEdges_; ///< A set of searchable key/values to be indexed
 
-  std::vector< std::vector<FujimapBlock> > fbs; ///< BitArrays
+  std::vector< std::vector<FujimapBlock> > fbs_; ///< BitArrays
 
-  uint64_t seed; ///< A seed for hash
-  uint64_t fpWidth; ///< A false positive rate (prob. of false psoitive is 2^{-fpWidth})
-  uint64_t tmpN; ///< A size of tempolary map
-  uint64_t keyBlockN; ///< A number of blocks
+  uint64_t seed_; ///< A seed for hash
+  uint64_t fpLen_; ///< A false positive rate (prob. of false positive is 2^{-fpLen})
+  uint64_t tmpN_; ///< A size of tempolary map
+  uint64_t keyBlockN_; ///< A number of blocks
+  EncodeType et_; ///< An encode type of values
 };
 
 }
