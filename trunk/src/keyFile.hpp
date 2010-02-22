@@ -1,5 +1,5 @@
 /*
- * common.hpp
+ * keyFile.hpp
  * Copyright (c) 2010 Daisuke Okanohara All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person
@@ -24,17 +24,49 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef FUJIMAP_COMMON_HPP__
-#define FUJIMAP_COMMON_HPP__
 
+#ifndef KEYFILE_HPP__
+#define KEYFILE_HPP__
+
+#include <fstream>
+#include <string>
+#include <vector>
 #include <stdint.h>
 
 namespace fujimap_tool{
-  static const uint32_t R = 3;        ///< Hash Num in fujimap_block
-  static const uint32_t FPWIDTH = 0; ///< Default width of false positive bit
-  static const uint32_t TMPN = 1000000; ///< Default size of temporary associative array
-  static const uint32_t KEYBLOCK = 1024;  ///< # of minimum perfect hash function in fujimap_block
-  static const uint32_t NOTFOUND = 0xFFFFFFFF; ///< Indicate that key is not found
+
+
+class KeyFile{
+  enum {
+    BLOCKSIZE = 4096
+  };
+
+public:
+  KeyFile();
+  ~KeyFile();
+
+  int initWorkingFile(const char* fn);
+  void initMaxID(const uint64_t maxID);
+  int clear();
+  int write(const uint64_t id, const char* key, const size_t klen,
+	    const uint64_t value);
+  int read(const uint64_t id, std::vector<std::pair<std::string, uint64_t> >& kvs);
+  size_t getNum() const;
+
+private:
+  static void writeUint64(std::vector<char>& v, const uint64_t x);
+  static uint64_t readUint64(std::vector<char>::const_iterator& it);
+
+  std::string fns_;
+  std::vector< std::vector<std::pair<std::string, uint64_t> > > buffers_;
+  std::vector<uint64_t> nextPointers_;
+  std::vector<uint64_t> firstPointers_;
+  size_t num_;
+  uint64_t maxID_;
+
+};
+
 }
 
-#endif // COMMON_HPP__
+#endif // KEY_FILE_HPP__
+

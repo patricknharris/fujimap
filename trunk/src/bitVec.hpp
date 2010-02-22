@@ -1,5 +1,5 @@
 /*
- * bitvec.hpp
+ * bitVec.hpp
  * Copyright (c) 2010 Daisuke Okanohara All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person
@@ -50,13 +50,10 @@ public:
   void write(std::ofstream& ofs);
   void read(std::ifstream& ifs);
 
-  static void printBit(const uint64_t v, const uint64_t len);
-
 private:
   //static uint32_t popCount(const uint32_t i);
 
-  std::vector<uint64_t> bv;
-  std::vector<uint64_t> cum;
+  std::vector<uint64_t> bv_;
 };
 
 #endif /// BITVEC_HPP__

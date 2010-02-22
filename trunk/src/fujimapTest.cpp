@@ -11,8 +11,21 @@ int buildFromFile(const cmdline::parser& p){
   const char* fn = p.get<string>("dic").c_str();
     
   fujimap_tool::Fujimap fm;
-  fm.initFP(p.get<int>("fpwidth"));
+  fm.initFP(p.get<int>("fplen"));
   fm.initTmpN(p.get<int>("tmpN"));
+
+  string encodeTypeS = p.get<string>("encode");
+  fujimap_tool::EncodeType et = fujimap_tool::BINARY;
+  if (encodeTypeS == "binary"){
+    et =  fujimap_tool::BINARY;
+  } else if (encodeTypeS == "gamma"){
+    et = fujimap_tool::GAMMA;
+  } else {
+    p.usage();
+    return -1;
+  }
+  fm.initEncodeType(et);
+
 
   ifstream ifs(fn);
   if (!ifs){
@@ -92,9 +105,10 @@ int buildFromFile(const cmdline::parser& p){
 int main(int argc, char* argv[]){
   cmdline::parser p;
   p.add<string>("dic", 'd', "dictionary", true, "");
-  p.add<int>("fpwidth", 'f', "false positive rate 2^{-f} (0 <= f < 31) ", false, fujimap_tool::FPWIDTH);
+  p.add<int>("fplen", 'f', "false positive rate 2^{-f} (0 <= f < 31) ", false, fujimap_tool::FPLEN);
   p.add<int>("tmpN", 't', "temporarySize", false, fujimap_tool::TMPN);
   p.add<string>("index", 'i', "index", true, "");
+  p.add<string>("encode", 'e', "Code encoding  (=binary, gamma)", "binary");
   p.add("help", 'h', "print this message");
   p.set_progam_name("fujimap_test");
   

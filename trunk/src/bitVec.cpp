@@ -1,5 +1,5 @@
 /*
- * bitvec.cpp
+ * bitVec.cpp
  * Copyright (c) 2010 Daisuke Okanohara All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person
@@ -27,9 +27,11 @@
 #include <algorithm>
 #include <iostream>
 #include <cassert>
-#include "fujimap.hpp"
+#include "bitVec.hpp"
+#include "fujimapCommon.hpp"
 
 using namespace std;
+using namespace fujimap_tool;
 
 BitVec::BitVec(){
 }
@@ -39,21 +41,21 @@ BitVec::BitVec(const size_t size){
 }
 
 void BitVec::write(ofstream& ofs){
-  uint64_t bvSize = static_cast<uint64_t>(bv.size());
+  uint64_t bvSize = static_cast<uint64_t>(bv_.size());
   ofs.write((const char*)(&bvSize), sizeof(bvSize));
-  ofs.write((const char*)(&bv[0]), sizeof(bv[0]) * bvSize);
+  ofs.write((const char*)(&bv_[0]), sizeof(bv_[0]) * bvSize);
 }
 
 void BitVec::read(ifstream& ifs){
   uint64_t bvSize = 0;
   ifs.read((char*)(&bvSize), sizeof(bvSize));
-  bv.resize(bvSize);
-  ifs.read((char*)(&bv[0]), sizeof(bv[0]) * bvSize);
+  bv_.resize(bvSize);
+  ifs.read((char*)(&bv_[0]), sizeof(bv_[0]) * bvSize);
 }
 
 
 size_t BitVec::bvSize() const {
-  return bv.size();
+  return bv_.size();
 }
 
 /*
@@ -107,12 +109,12 @@ uint32_t BitVec::select(const size_t ind) const {
 */
 
 void BitVec::resize(const size_t size){
-  bv.resize((size + 64-1)/64);
-  fill(bv.begin(), bv.end(), 0);
+  bv_.resize((size + 64-1)/64);
+  fill(bv_.begin(), bv_.end(), 0);
 }
 
 uint64_t BitVec::getBit(const size_t pos) const{
-  return (bv[(pos/64) % bv.size()] >> (pos%64)) & 1LLU;
+  return (bv_[(pos/64) % bv_.size()] >> (pos%64)) & 1LLU;
 }
 
 uint64_t BitVec::getBits(const size_t pos, const size_t len) const {
@@ -120,37 +122,28 @@ uint64_t BitVec::getBits(const size_t pos, const size_t len) const {
   uint64_t blockInd1    = pos / 64;
   uint64_t blockOffset1 = pos % 64;
   if (blockOffset1 + len <= 64){
-    return (bv[blockInd1] >> blockOffset1) & ((1LLU << len) - 1);
+    return mask(bv_[blockInd1] >> blockOffset1, len);
   } else {
-    uint64_t blockInd2    = ((pos + len - 1) / 64) % bv.size();
-    return  ((bv[blockInd1] >> blockOffset1) + (bv[blockInd2] << (64 - blockOffset1))) & ((1LLU << len) - 1);
+    uint64_t blockInd2    = ((pos + len - 1) / 64) % bv_.size();
+    return  mask((bv_[blockInd1] >> blockOffset1) + (bv_[blockInd2] << (64 - blockOffset1)), len);
   }
 }
 
 void BitVec::setBit(const size_t pos) {
-  bv[(pos/64) % bv.size()] |= (1LLU << (pos % 64));
+  bv_[(pos/64) % bv_.size()] |= (1LLU << (pos % 64));
 }
 
 void BitVec::setBits(const size_t pos, const size_t len, const uint64_t bits){
+  assert((pos + len - 1) / 64 < bv_.size());
   uint64_t blockInd1    = pos / 64;
   uint64_t blockOffset1 = pos % 64;
   if (blockOffset1 + len <= 64){
-    bv[blockInd1] = (bv[blockInd1] & (~(((1LLU << len) - 1) << blockOffset1))) |
+    bv_[blockInd1] = (bv_[blockInd1] & (~(((1LLU << len) - 1) << blockOffset1))) |
       bits << blockOffset1;
   } else {
     uint64_t blockOffset2 = (pos + len) % 64;
-    bv[blockInd1] = (bv[blockInd1] & ((1LLU << blockOffset1) - 1)) | (bits << blockOffset1);
-    bv[blockInd1+1] = (bv[blockInd1+1] & (~((1LLU << blockOffset2) - 1))) | (bits >> (64 - blockOffset1));
+    bv_[blockInd1] = mask(bv_[blockInd1], blockOffset1) | (bits << blockOffset1);
+    bv_[blockInd1+1] = (bv_[blockInd1+1] & (~((1LLU << blockOffset2) - 1))) | (bits >> (64 - blockOffset1));
   }
 }
 
-void BitVec::printBit(const uint64_t v, const uint64_t len){
-  assert(len < 64);
-  for (uint64_t i = 0; i < len; ++i){
-    cerr << ((v >> i) & 1LLU);
-    if ((i+1) % 8 == 0) {
-      cerr << " " ;
-    }
-  }
-  cerr << endl;
-}
