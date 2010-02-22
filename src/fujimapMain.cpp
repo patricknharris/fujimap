@@ -8,6 +8,15 @@
 
 using namespace std;
 
+void printCurrentStatus(fujimap_tool::Fujimap& fm){
+  size_t wsize = fm.getWorkingSize();
+  cerr << "keyNum:       " << fm.getKeyNum() << endl
+       << "fpLen:        " << fm.getFpLen() << endl
+       << "encoding:     " << fm.getEncodeTypeStr() << endl
+       << "wsize(bytes): " << wsize / 8 << endl
+       << "bits/key:     " << (float)wsize / fm.getKeyNum() << endl;
+}
+
 int buildFromFile(cmdline::parser& p){
   istream *pis=&cin;
   ifstream ifs;
@@ -40,23 +49,24 @@ int buildFromFile(cmdline::parser& p){
     }
   }
 
-  bool logValue = false;
-  if (p.exist("logvalue")){
-    logValue = true;
+  bool logValue = p.exist("logvalue");
+  bool stringValue = p.exist("stringvalue");
+
+  if (p.exist("encode")){
+    string encodeTypeS = p.get<string>("encode");
+    fujimap_tool::EncodeType et = fujimap_tool::BINARY;
+    if (encodeTypeS == "binary"){
+      et =  fujimap_tool::BINARY;
+    } else if (encodeTypeS == "gamma"){
+      et = fujimap_tool::GAMMA;
+    } else {
+      p.usage();
+      return -1;
+    }
+    fm.initEncodeType(et);
   }
 
-  string encodeTypeS = p.get<string>("encode");
-  fujimap_tool::EncodeType et = fujimap_tool::BINARY;
-  if (encodeTypeS == "binary"){
-    et =  fujimap_tool::BINARY;
-  } else if (encodeTypeS == "gamma"){
-    et = fujimap_tool::GAMMA;
-  } else {
-    p.usage();
-    return -1;
-  }
-  fm.initEncodeType(et);
-
+  size_t readNum = 0;
   string line;
   for (size_t lineN = 1; getline(is, line); ++lineN){
     size_t p = line.find_last_of('\t');
@@ -65,26 +75,35 @@ int buildFromFile(cmdline::parser& p){
       continue;
     }
     if (p == 0 || p+1 == line.size()) continue; // no key or no value
-    uint64_t val = strtoll(line.substr(p+1).c_str(), NULL, 10);
-    if (logValue){
-      if (val == 0){
-	cerr << "When -l is specified, all values should be larger than 0" << endl;
-	cerr << "line " << lineN << ":" << line << endl;
-	return -1;
+
+
+    if (stringValue){
+      fm.setString(line.c_str(), p, 
+		   line.substr(p+1).c_str(), line.substr(p+1).size(),
+		   false);
+    } else {
+	uint64_t val = strtoll(line.substr(p+1).c_str(), NULL, 10);
+      if (logValue){
+	if (val == 0){
+	  cerr << "When -l is specified, all values should be larger than 0" << endl;
+	  cerr << "line " << lineN << ":" << line << endl;
+	  return -1;
+	}
+	val = fujimap_tool::log2(val);
       }
-      val = fujimap_tool::log2(val);
-    }
-    fm.setInteger(line.c_str(), p, val, false);
+      fm.setInteger(line.c_str(), p, val, false);
+    } 
+
+    readNum++;
   }
-  cerr << "keyNum:" <<    fm.getKeyNum() << endl
-       << "fpLen:" <<    fm.getFpLen() << endl
-       << "encoding:" << fm.getEncodeTypeStr() << endl;
+  cerr << "read " << readNum << " keys" << endl;
 
   int ret = fm.build(); 
   if (ret == -1){
     return -1;
   }
   cerr << "build done." << endl;
+  printCurrentStatus(fm);
 
   if (fm.save(p.get<string>("index").c_str()) == -1){
     cerr << fm.what() << endl;
@@ -104,7 +123,8 @@ int main(int argc, char* argv[]){
   p.add<int>   ("tmpN",        't', "TemporarySize",                                                false);
   p.add<string>("encode",      'e', "Code encoding  (=binary, gamma)",                              false);
   p.add<string>("workingfile", 'w', "Working file for temporary data",                              false);
-  p.add        ("logvalue",    'l', "When specified, take a log of given value as input");
+  p.add        ("logvalue",    'l', "When specified, store a log of input value");
+  p.add        ("stringvalue", 's', "When specified, sotre a string of input value");
   p.add("help", 'h', "print this message");
   p.set_progam_name("fujimap");
   
@@ -131,7 +151,10 @@ int main(int argc, char* argv[]){
       return -1;
     }
 
-    cout << "load done. " << fm.getKeyNum() << " keys." << endl;
+    cout << "load done. " << endl;
+    printCurrentStatus(fm);
+
+    bool stringValue = p.exist("stringvalue");
 
     string key;
     for (;;){
@@ -139,17 +162,21 @@ int main(int argc, char* argv[]){
       if (!getline(cin, key)){
 	break;
       }
-
-      size_t len = 0;
-      const char* sval = fm.getString(key.c_str(), key.size(), len);
-      if (sval != NULL){
-	cout << "sval:" << sval << endl;
-      }
-      uint64_t code = fm.getInteger(key.c_str(), key.size());
-      if (code == fujimap_tool::NOTFOUND){
-	cout << "notfound" << endl;
+      if (stringValue){
+	size_t len = 0;
+	const char* sval = fm.getString(key.c_str(), key.size(), len);
+	if (sval == NULL){
+	  cout << "NOTFOUND:" << endl;
+	} else {
+	  cout << "FOUND:" <<  sval << endl;
+	}
       } else {
-	cout << "code:" << code << endl;
+	uint64_t code = fm.getInteger(key.c_str(), key.size());
+	if (code == fujimap_tool::NOTFOUND){
+	  cout << "NOTFOUND:" << endl;
+	} else {
+	  cout << "FOUND:" << code << endl;
+	}
       }
     }
   }

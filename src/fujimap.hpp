@@ -98,7 +98,8 @@ public:
    * @param klen the length of the key.
    * @param vbuf the pointer to the value region.
    * @param vlen the length of the value.
-   * @param searchable true if this record will be searchable immediately after this operation false if this record will be searchable after build() is called (default: false).
+   * @param searchable true if this record will be searchable immediately after this operation false 
+   * if this record will be searchable after build() is called (default: false).
    */
   void setString(const char* kbuf, const size_t klen, 
 		 const char* vbuf, const size_t vlen,
@@ -109,7 +110,8 @@ public:
    * @param kbuf the pointer to the key region.
    * @param klen the length of the key.
    * @param value the interger value.
-   * @param searchable true if this record will be searchable immediately after this operation or false if this record will be searchable after build() is called (defalut: false).
+   * @param searchable true if this record will be searchable immediately after this operation or false 
+   * if this record will be searchable after build() is called (defalut: false).
    */
   void setInteger(const char* kbuf, const size_t klen, const uint64_t value,
 		  const bool searchable = false); 
@@ -166,6 +168,12 @@ public:
    * @return the number of registered keys.
    */
   size_t getKeyNum() const;
+
+  /**
+   * Get the size of working space (estimated)
+   * @return the size of working space in bits
+   */
+  size_t getWorkingSize() const;
 
   /**
    * Get the fpLen
