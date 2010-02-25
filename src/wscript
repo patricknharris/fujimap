@@ -9,45 +9,39 @@ def set_options(ctx):
     
 def configure(ctx):
   ctx.check_tool('compiler_cxx')
+  ctx.env.CXXFLAGS += ['-O2', '-Wall', '-g']
 
 def build(bld):
   task1= bld(features='cxx cshlib',
        source       = 'fujimap.cpp fujimapBlock.cpp fujimapCommon.cpp bitVec.cpp keyEdge.cpp keyFile.cpp',
        name         = 'fujimap',
-       cxxflags     = ['-O2', '-Wall', '-g'],
        target       = 'fujimap',
        includes     = '.')
   task2= bld(features='cxx cprogram',
        source       = 'fujimapMain.cpp',
-       cxxflags     = ['-O2', '-Wall', '-g'],
        target       ='fujimap',
        includes     = '.',
        uselib_local = 'fujimap')
   task3= bld(features='cxx cprogram',
        source       = 'fujimapTest.cpp',
-       cxxflags     = ['-O2', '-Wall'],
        target       ='fujimapTest',
        includes     = '.',
        uselib_local = 'fujimap')
   task4= bld(features='cxx cprogram',
        source       = 'bitVecTest.cpp bitVec.cpp fujimapCommon.cpp',
-       cxxflags     = ['-O2', '-Wall'],
        target       ='bitVecTest',
        includes     = '.'),
   task5= bld(features='cxx cprogram',
        source       = 'fujimapPerformanceTest.cpp',
-       cxxflags     = ['-O2', '-Wall'],
        target       ='fujimapPerformanceTest',
        includes     = '.',
        uselib_local = 'fujimap'),
   task6= bld(features='cxx cprogram',
        source       = 'keyFile.cpp fujimapCommon.cpp keyFileTest.cpp',
-       cxxflags     = ['-O2', '-Wall'],
        target       ='keyFileTest',
        includes     = '.')
   task7= bld(features='cxx cprogram',
        source       = 'encodeTest.cpp fujimapCommon.cpp',
-       cxxflags     = ['-O2', '-Wall'],
        target       ='encodeTest',
        includes     = '.')
   bld.install_files('${PREFIX}/include', 'fujimap.hpp')
