@@ -11,7 +11,7 @@ def configure(ctx):
   ctx.check_tool('compiler_cxx')
 
 def build(bld):
-  task1= bld(features='cxx cstaticlib',
+  task1= bld(features='cxx cshlib',
        source       = 'fujimap.cpp fujimapBlock.cpp fujimapCommon.cpp bitVec.cpp keyEdge.cpp keyFile.cpp',
        name         = 'fujimap',
        cxxflags     = ['-O2', '-Wall', '-g'],
